@@ -51,6 +51,10 @@ bodkin doctor
 npm run doctor   ·   npm run hunt   ·   npm run board
 ```
 
+On Windows the checkout carries three launchers: `start-hunt.cmd`, `start-snipe.cmd` (dry run) and `start-board.cmd`. Double-click one;
+it installs dependencies on the first run, copies `.env.example` to `.env` when there is none, and starts that command. With Windows
+Terminal set as the default terminal app the links in the output are clickable.
+
 `.env` works out of the box on the public RPC. No key is needed for `doctor`, `hunt`, `watch`, `scan`, `fees`, `dev`, `positions`,
 or any dry run. `PRIVATE_KEY` is needed only for `--live`, `sell`, `wallet` and `claim`.
 
@@ -154,10 +158,10 @@ Four walls around a live session: a confirmation that prints your address, balan
 per buy; the position cap; and a **session budget** (`--budget`, 0.05 ETH by default) after which nothing fires, whatever the score.
 The rules, the score and where every number comes from: [docs/STRATEGY.md](./docs/STRATEGY.md); what can go wrong: [docs/SAFETY.md](./docs/SAFETY.md).
 
-Symbols and contracts in the terminal are links (Ctrl+click in Windows Terminal, iTerm2, kitty, VS Code): the symbol opens Axiom's Pulse
-on Robinhood Chain, the contract opens the token on pons, and every card ends with an `open:` line for pons, Axiom, FOMO and the explorer.
-A launch that is seconds old lives on the curve, not on a DEX, so the trading terminals find it by contract. The Axiom and FOMO links carry
-the referral handles set in `.env` (`REF_AXIOM`, `REF_FOMO`); leave them empty to hide those links.
+Symbols and contracts in the terminal are links (Ctrl+click in Windows Terminal, iTerm2, kitty, VS Code): the symbol opens the launch
+on Axiom, the contract opens it on FOMO, and every card ends with an `open:` line for pons, Axiom, FOMO and the explorer. Axiom keys a
+Robinhood Chain market by the pons curve address and FOMO's page needs a signed-in session; bodkin knows both. The handles in `.env`
+(`REF_AXIOM`, `REF_FOMO`) only feed the sign-up links printed under the header; leave them empty to drop those.
 
 ## fees
 
