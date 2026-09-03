@@ -81,7 +81,7 @@ export async function startBoard(opts: BoardOpts): Promise<void> {
     const f = feedHealth();
     return { feed: f, lastLaunchAgeSec: f.lastLaunchAt ? Math.round((Date.now() - f.lastLaunchAt) / 1000) : null, gate: gateStats(), spentWei: engine.spent().toString() };
   };
-  const hello = () => ({ kind: "hello", live: opts.live, paused: engine.paused(), rules: rulesView(), startedAt, seen, fired, positions: positionsView(), refs: { axiom: links.axiom(), fomo: links.fomo() }, health: health() });
+  const hello = () => ({ kind: "hello", live: opts.live, paused: engine.paused(), rules: rulesView(), startedAt, seen, fired, positions: positionsView(), refs: { axiom: links.axiomRef(), fomo: links.fomoRef() }, health: health() });
 
   // A pulse every 10 s so the page can tell "quiet chain" from "dead engine".
   const pulse = setInterval(() => push({ kind: "tick", t: Date.now(), paused: engine.paused(), health: health() }), 10_000);

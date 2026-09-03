@@ -141,6 +141,7 @@
   footer .feather:hover { color: var(--yellow); }
   footer .feather svg { width: 14px; height: 14px; }
   footer .spacer { margin-left: auto; }
+  #foot-refs a { color: var(--neon); text-decoration: none; }
   .cat { position: absolute; bottom: 6px; left: -60px; width: 48px; height: 48px; image-rendering: pixelated; pointer-events: none; }
   .cat.run { animation: catRun 6s linear forwards; }
   @keyframes catRun { from { left: -60px; } to { left: 104%; } }
@@ -206,7 +207,7 @@
   <span>127.0.0.1 · <span id="foot-mode">dry run</span> · one engine, rules on screen</span>
   <a class="feather" href="https://robinhood.com/us/en/crypto/chain/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3c-6 0-11 3-14 8-1.6 2.7-2 5.8-2 10 3-4 6-6 9-8-2 3-3 6-3 8 5-1 8-4 9.5-8C20.5 9.5 20.5 6 20 3z" fill="#CCFF00"/><path d="M4 21c3-6 7-10 12-14" stroke="#110E08" stroke-width="1.2" fill="none"/></svg>built on Robinhood Chain</a>
   <span class="spacer"></span>
-  <span>MIT · non-custodial · <a href="https://github.com/Phosphenq/bodkin" target="_blank" rel="noopener" style="color:var(--neon);text-decoration:none">github</a></span>
+  <span>MIT · non-custodial · <a href="https://github.com/Phosphenq/bodkin" target="_blank" rel="noopener" style="color:var(--neon);text-decoration:none">github</a><span id="foot-refs"></span></span>
   <svg class="cat" id="cat" viewBox="0 0 16 16" aria-hidden="true">
     <g fill="#CCFF00"><rect x="3" y="3" width="1" height="2"/><rect x="7" y="3" width="1" height="2"/><rect x="3" y="5" width="5" height="4"/><rect x="2" y="9" width="10" height="4"/><rect x="12" y="7" width="1" height="4"/><rect x="13" y="6" width="1" height="2"/></g>
     <g fill="#FFE700" class="leg"><rect x="3" y="13" width="1" height="2"/><rect x="6" y="13" width="1" height="2"/><rect x="9" y="13" width="1" height="2"/><rect x="11" y="13" width="1" height="2"/></g>
@@ -340,8 +341,8 @@
       <div class="links">
         <a class="btn sm" target="_blank" rel="noopener" href="https://www.ponsfamily.com/token/${e.token}">pons</a>
         <a class="btn sm" target="_blank" rel="noopener" href="https://robinhoodchain.blockscout.com/token/${e.token}">explorer</a>
-        ${state.refs.axiom ? `<a class="btn sm" target="_blank" rel="noopener" data-ca="${e.token}" href="${esc(state.refs.axiom)}" title="opens Axiom Pulse on Robinhood Chain and copies the contract for the search box">axiom</a>` : ""}
-        ${state.refs.fomo ? `<a class="btn sm" target="_blank" rel="noopener" data-ca="${e.token}" href="${esc(state.refs.fomo)}" title="opens FOMO and copies the contract">fomo</a>` : ""}
+        ${e.curve ? `<a class="btn sm" target="_blank" rel="noopener" href="https://axiom.trade/meme/${esc(String(e.curve).toLowerCase())}?chain=robinhood" title="this launch on Axiom">axiom</a>` : ""}
+        <a class="btn sm" target="_blank" rel="noopener" href="https://fomo.family/tokens/robinhood/${esc(String(e.token).toLowerCase())}" title="this launch on FOMO, needs a FOMO session">fomo</a>
         ${d.socials?.x ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.x)}">x</a>` : ""}
         ${d.socials?.web ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.web)}">web</a>` : ""}
         ${d.socials?.tg ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.tg)}">tg</a>` : ""}
@@ -364,11 +365,11 @@
       <ul class="reasons">${reasons}</ul>`;
     drawer.classList.add("open");
   }
+  function renderRefs() { const r = state.refs || {}; const a = []; if (r.axiom) a.push(`<a href="${esc(r.axiom)}" target="_blank" rel="noopener">axiom</a>`); if (r.fomo) a.push(`<a href="${esc(r.fomo)}" target="_blank" rel="noopener">fomo</a>`); $("foot-refs").innerHTML = a.length ? ` · sign up: ${a.join(" · ")}` : ""; }
   function closeDrawer() { drawer.classList.remove("open"); document.querySelectorAll("tr.sel").forEach((x) => x.classList.remove("sel")); state.sel = null; }
   $("drawer-close").onclick = closeDrawer;
   drawer.addEventListener("click", (ev) => {
     const c = ev.target.closest("[data-copy]"); if (c) { copy(c.dataset.copy); return; }
-    const a = ev.target.closest("[data-ca]"); if (a) navigator.clipboard?.writeText(a.dataset.ca).then(() => toast("contract copied, paste it in the search box")).catch(() => {});
   });
 
   /* positions */
@@ -426,7 +427,7 @@
   function onEvent(e) {
     if (e.kind === "hello") {
       state.live = e.live; state.paused = !!e.paused; state.startedAt = e.startedAt; state.seen = e.seen || 0; state.fired = e.fired || 0; state.rules = e.rules;
-      state.refs = e.refs || {}; state.health = e.health || null; state.lastTick = Date.now(); state.connected = true;
+      state.refs = e.refs || {}; state.health = e.health || null; state.lastTick = Date.now(); state.connected = true; renderRefs();
       for (const p of e.positions || []) state.pos.set(p.id, { symbol: p.symbol, ethIn: p.ethIn, pnl: p.pnl, status: p.status, venue: "curve", reason: p.reason, closedAt: p.closedAt });
       renderMode(); renderRules();
     } else if (e.kind === "tick") { state.lastTick = Date.now(); state.health = e.health || null; if (state.paused !== !!e.paused) { state.paused = !!e.paused; renderMode(); } }
