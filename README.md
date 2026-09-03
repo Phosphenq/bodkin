@@ -122,10 +122,12 @@ bodkin board            # http://127.0.0.1:4663, dry run
 bodkin board --live
 ```
 
-The engine and a page to watch it. Click a launch for the whole read: links, description, every rule that refused it, every scoring line.
-**pause** stops firing without stopping the feed. **close now** sells a position at the current quote. Five rules have steppers and change the
-running engine. `p` pause, `f` fire filter, `/` search, `esc` close. It binds loopback, it cannot buy on demand, and `--live` is a launch
-flag, not a button. The rest, and two things hidden in the page: [docs/BOARD.md](./docs/BOARD.md).
+The engine and a page to watch it. **It opens as a feed**: launches arrive, get scored and explained, and nothing fires until you press
+**start demo** (dry run) or, with `--live`, **arm live sniping**. Click a launch for the whole read: links to pons, the explorer, Axiom and
+FOMO, description, every rule that refused it, every scoring line. **close now** sells a position at the current quote. Five rules have
+steppers and change the running engine. A pulse every ten seconds tells a quiet chain from a dead engine. `p` start/stop, `f` fire filter,
+`/` search, `esc` close. It binds loopback, it cannot buy on demand, and `--live` is a launch flag, not a button. The rest, and two things
+hidden in the page: [docs/BOARD.md](./docs/BOARD.md).
 
 <p align="center"><img src="./assets/board-drawer.png" alt="the drawer: contract, links, decision, dev buy, fee recipient, exempt wallets, deployer, curve, every scoring line" width="100%"></p>
 
@@ -148,7 +150,14 @@ Every `pass` prints the rule that refused the launch. A launch that declared fou
 defaults even when everything else about it looks good. Relax `maxExemptWallets` on purpose, or not.
 
 Exits: take profit +80 %, stop loss −35 %, trailing 25 % below the peak, max hold 45 min. Marks are real quotes for the whole position.
-The rules, the score and where every number comes from: [docs/STRATEGY.md](./docs/STRATEGY.md).
+Four walls around a live session: a confirmation that prints your address, balance and limits and waits for you to type `arm`; the size
+per buy; the position cap; and a **session budget** (`--budget`, 0.05 ETH by default) after which nothing fires, whatever the score.
+The rules, the score and where every number comes from: [docs/STRATEGY.md](./docs/STRATEGY.md); what can go wrong: [docs/SAFETY.md](./docs/SAFETY.md).
+
+Symbols and contracts in the terminal are links (Ctrl+click in Windows Terminal, iTerm2, kitty, VS Code): the symbol opens Axiom's Pulse
+on Robinhood Chain, the contract opens the token on pons, and every card ends with an `open:` line for pons, Axiom, FOMO and the explorer.
+A launch that is seconds old lives on the curve, not on a DEX, so the trading terminals find it by contract. The Axiom and FOMO links carry
+the referral handles set in `.env` (`REF_AXIOM`, `REF_FOMO`); leave them empty to hide those links.
 
 ## fees
 
@@ -195,8 +204,9 @@ flowchart LR
     X --> O["sell on curve or v4 pool"]
 ```
 
-- Detection is a websocket subscription to the factory's `TokenLaunched` log (publicnode, free), or a 300 ms block-range poll. There is no
-  mempool to watch: the sequencer broadcasts blocks it has already built.
+- Detection is a websocket subscription to the factory's `TokenLaunched` log (publicnode, free), with a watchdog: if the socket says
+  nothing for 45 seconds the feed re-subscribes and polls block ranges alongside until the socket delivers again, so the feed never goes
+  silent for good. There is no mempool to watch: the sequencer broadcasts blocks it has already built.
 - Enrichment is one `aggregate3` through the canonical Multicall3 (`0xcA11…CA11`) plus the launch transaction, receipt and block, all through
   one RPC gate that routes each method to a public endpoint that serves it and keeps both from answering 429.
 - Deployer records come from an in-memory index of every launch and graduation in the last 400 000 blocks, built once at startup.
