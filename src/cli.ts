@@ -17,6 +17,7 @@ import { c, hr, log } from "./util/log.js";
 import { ethUsd } from "./util/price.js";
 import { retry } from "./util/retry.js";
 import { launchCard, launchUpdate } from "./view.js";
+import { refLine } from "./util/links.js";
 
 const program = new Command();
 program.name("bodkin").description("The sniper terminal for pons v2 on Robinhood Chain. Local, open, non-custodial.").version("0.1.0");
@@ -144,6 +145,7 @@ program
     if (!opts.json) {
       banner();
       console.log(`${c.neon("bodkin")} ${c.muted("hunt · pons v2 · Robinhood Chain (4663) · " + (wsUrl ? "websocket" : `poll ${opts.poll || process.env.POLL_MS || 300} ms`) + (price ? ` · ETH $${price.toFixed(0)}` : ""))}`);
+      if (refLine()) console.log(c.muted(refLine()));
       console.log(hr());
     }
     deployers.start(

@@ -12,7 +12,7 @@ import { exitReason, openPosition, openPositions, updatePosition, type ExitRules
 import { getAccount } from "./trade/wallet.js";
 import { envNum } from "./util/env.js";
 import { bps, eth, hhmmss, short } from "./util/fmt.js";
-import { links, osc } from "./util/links.js";
+import { links, osc, refLine } from "./util/links.js";
 import { c, log } from "./util/log.js";
 import { retry } from "./util/retry.js";
 
@@ -156,6 +156,7 @@ export function startEngine(opts: EngineOpts): EngineHandle {
   const sweep = setInterval(() => { if (deployers.ready) void deployers.sweepGraduations().catch(() => undefined); }, 60_000);
 
   log.info(`${c.neon("bodkin")} ${c.muted(`snipe · ${live ? c.onNeon(" LIVE ") : "dry run"} · ${eth(rules.ethPerBuy)} ETH per shot · budget ${eth(rules.sessionBudgetWei)} ETH · max open ${rules.maxOpenPositions} · tax ceiling ${bps(rules.maxOpeningTaxBps)} · min score ${rules.minScore} · TP ${rules.exits.takeProfitPct}% SL ${rules.exits.stopLossPct}% trail ${rules.exits.trailingPct}% hold ${rules.exits.maxHoldMin}m`)}`);
+  if (refLine()) log.info(c.muted(refLine()));
 
   const onLaunch = async (ev: LaunchEvent) => {
     const t0 = Date.now();
@@ -193,7 +194,7 @@ export function startEngine(opts: EngineOpts): EngineHandle {
       const got = res.tokensOut ?? res.tokensQuoted;
       spent += rules.ethPerBuy;
       const pos = openPosition({ token: ev.token, curve: ev.curve, symbol: intel.meta?.symbol ?? "?", name: intel.meta?.name ?? "?", openedAt: Math.floor(Date.now() / 1000), entryTx: res.hash, dryRun: !live, entryEth: rules.ethPerBuy.toString(), tokens: got.toString() });
-      log.info(`${c.muted(hhmmss())}  ${c.onNeon(" FIRE ")} ${osc(sym.padEnd(10), links.axiom())} ${live ? "bought" : "would buy"} ${eth(rules.ethPerBuy)} ETH → ${(Number(got) / 1e18 / 1e6).toFixed(2)}M tokens at tax ${bps(w.taxBps)} after ${w.waitedMs} ms wait  ${c.muted(osc(ev.token, links.pons(ev.token)))}${res.hash ? "  " + c.muted(res.hash) : ""}`);
+      log.info(`${c.muted(hhmmss())}  ${c.onNeon(" FIRE ")} ${osc(sym.padEnd(10), links.axiom(ev.curve))} ${live ? "bought" : "would buy"} ${eth(rules.ethPerBuy)} ETH → ${(Number(got) / 1e18 / 1e6).toFixed(2)}M tokens at tax ${bps(w.taxBps)} after ${w.waitedMs} ms wait  ${c.muted(osc(ev.token, links.fomo(ev.token)))}${res.hash ? "  " + c.muted(res.hash) : ""}`);
       emit({ kind: "fire", token: ev.token, symbol: sym, ethIn: rules.ethPerBuy.toString(), tokens: got.toString(), taxBps: w.taxBps, waitedMs: w.waitedMs, tx: res.hash ?? null, live, positionId: pos.id });
     } catch (e) {
       log.warn(`${sym} ${live ? "buy failed" : "dry-run quote failed"}: ${(e as Error).message.split("\n")[0]}`);
