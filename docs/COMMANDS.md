@@ -1,7 +1,8 @@
 # Command reference
 
 Every command, every flag, every environment variable. Run any command with `--help` for the same text in the terminal.
-`bodkin` is the installed binary; from a source checkout use `npx tsx src/cli.ts <command>` or `npm run <script>`.
+`bodkin` is the installed binary; from a source checkout use `npx tsx src/cli.ts <command>` or `npm run <script>`. On Windows,
+`start-hunt.cmd`, `start-snipe.cmd` and `start-board.cmd` in the checkout root start those three with a double-click.
 
 Commands that can move money (`snipe`, `buy`, `sell`, `claim`, `board --live`) are **dry run unless you pass `--live`**.
 A dry run reads the same chain state and prints the same decision; it just does not sign.
@@ -103,8 +104,8 @@ the session budget, refuses if the balance does not cover one buy, and waits for
 between a bad hour and an empty wallet: once entries have consumed it, every further launch is refused with `session budget reached`.
 
 In the cards and the FIRE lines the symbol and the contract are terminal hyperlinks (Ctrl+click in Windows Terminal, iTerm2, kitty,
-VS Code): the symbol opens Axiom's Pulse on Robinhood Chain, the contract opens the token on pons, and every card ends with an
-`open:` line for pons, Axiom, FOMO and the explorer. The Axiom and FOMO links carry the referral handles from `.env`.
+VS Code): the symbol opens the launch on Axiom, the contract opens it on FOMO, and every card ends with an `open:` line for pons,
+Axiom, FOMO and the explorer. The handles from `.env` only feed the sign-up line printed under the header.
 
 Run **one** engine per `data/` directory: `snipe` and `board` both write `data/positions.json`.
 
@@ -213,8 +214,8 @@ with `--live`, calls `claim()` and prints what arrived.
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | | alerts |
 | `BOARD_PORT` | 4663 | board |
 | `SNIPE_BUDGET_ETH` | 0.05 | ETH a session may spend on entries before it stops firing |
-| `REF_AXIOM` | phosphen | Axiom referral handle behind the Axiom links; empty hides them |
-| `REF_FOMO` | phosphenq | FOMO referral code behind the FOMO links; empty hides them |
+| `REF_AXIOM` | phosphen | Axiom handle for the sign-up link at startup and in the board footer; empty drops it |
+| `REF_FOMO` | phosphenq | FOMO code for the same sign-up link; empty drops it |
 | `NO_COLOR` | | plain output; `FORCE_COLOR=1` keeps colors when piping |
 
 ## Files

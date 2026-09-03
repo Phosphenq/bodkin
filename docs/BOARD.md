@@ -26,9 +26,8 @@ when its number changes.
 score with a bar (lime ≥ 75, white ≥ 45, grey below), `FIRE` or `pass`, and the first reason the rules refused it with a `+n` for the rest.
 A `FIRE` row flashes yellow on arrival. Click any row for the drawer.
 
-**Drawer.** The whole read of that launch: contract, links to pons, the explorer, Axiom and FOMO (both open through the referral handles
-in `.env` and copy the contract to your clipboard on the way, because a launch that is seconds old is on the curve, not on a DEX, and the
-terminals find it by contract), and the token's own X / web / Telegram when the launch declared them; the description; the decision and
+**Drawer.** The whole read of that launch: contract, links to pons, the explorer, Axiom (by the pons curve address, which is how Axiom
+keys a Robinhood Chain market) and FOMO (its page needs a signed-in FOMO session), and the token's own X / web / Telegram when the launch declared them; the description; the decision and
 every rule that refused it; score and verdict; dev buy; creator tax; who receives the fees; exempt wallets; the deployer's record; the
 opening tax at read time; curve progress; read latency and block; and every scoring line with its points. `esc` closes it.
 
