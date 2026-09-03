@@ -2,6 +2,7 @@ import { fdvQuote, progress, spotPrice } from "./pons/curve.js";
 import { devSharePct, hasSocials, type CurveActivity, type LaunchIntel } from "./pons/enrich.js";
 import type { Score } from "./score.js";
 import { bps, eth, hhmmss, pad, short, usd } from "./util/fmt.js";
+import { links, osc } from "./util/links.js";
 import { c } from "./util/log.js";
 
 export interface ViewCtx {
@@ -23,7 +24,7 @@ export function launchCard(intel: LaunchIntel, score: Score, ctx: ViewCtx): stri
   const sym = meta?.symbol ? `$${meta.symbol}` : "";
   const ts = tx?.timestamp ? hhmmss(tx.timestamp) : hhmmss();
   const lines: string[] = [];
-  lines.push(`${c.muted(ts)}  ${c.white(name)}  ${c.neon(sym)}  ${c.muted(ev.token)}  ${verdictTag(score.verdict)} ${c.white(String(score.total))}`);
+  lines.push(`${c.muted(ts)}  ${c.white(name)}  ${c.neon(osc(sym, links.axiom()))}  ${c.muted(osc(ev.token, links.pons(ev.token)))}  ${verdictTag(score.verdict)} ${c.white(String(score.total))}`);
 
   const dev = tx ? `${devSharePct(tx).toFixed(2)}% (${(Number(tx.devBuyWei) / 10 ** intel.pair.decimals).toFixed(intel.pair.decimals === 18 ? 4 : 2)} ${intel.pair.symbol})` : "?";
   const tax = record ? bps(record.creatorTaxBps) : "?";
@@ -65,6 +66,8 @@ export function launchCard(intel: LaunchIntel, score: Score, ctx: ViewCtx): stri
     lines.push(`   flow ${a.buys} buys / ${a.sells} sells, ${a.uniqueBuyers} buyers, ${a.taxedBuys} taxed, net ${eth(a.quoteIn - a.quoteOut)} ETH`);
   }
   lines.push(`   ${c.muted(score.reasons.join(" · "))}`);
+  const open = [osc("pons", links.pons(ev.token)), links.axiom() ? osc("axiom", links.axiom()) : "", links.fomo() ? osc("fomo", links.fomo()) : "", osc("explorer", links.explorer(ev.token))].filter(Boolean).join(" · ");
+  lines.push(`   ${c.muted("open:")} ${c.neon(open)}   ${c.muted("ctrl+click in Windows Terminal, iTerm, kitty, VS Code")}`);
   return lines.join("\n");
 }
 

@@ -12,6 +12,7 @@ import { exitReason, openPosition, openPositions, updatePosition, type ExitRules
 import { getAccount } from "./trade/wallet.js";
 import { envNum } from "./util/env.js";
 import { bps, eth, hhmmss, short } from "./util/fmt.js";
+import { links, osc } from "./util/links.js";
 import { c, log } from "./util/log.js";
 import { retry } from "./util/retry.js";
 
@@ -43,6 +44,8 @@ export interface SnipeRules {
   maxOpenPositions: number;
   /** Refuse when this many earlier launches in 30 min share the exact fingerprint (a launch farm). */
   maxFarmTwins: number;
+  /** Stop firing once this much ETH has been spent on entries in this session. The wall between a bad hour and a drained wallet. */
+  sessionBudgetWei: bigint;
   exits: ExitRules;
   /** Give up waiting for the tax to decay after this many ms. */
   maxWaitMs: number;
@@ -64,6 +67,7 @@ export function rulesFromEnv(overrides: Partial<SnipeRules> = {}): SnipeRules {
     deployers: new Set(),
     maxOpenPositions: 3,
     maxFarmTwins: 1,
+    sessionBudgetWei: parseEther(String(envNum("SNIPE_BUDGET_ETH", 0.05))),
     exits: {
       takeProfitPct: envNum("TAKE_PROFIT_PCT", 80),
       stopLossPct: envNum("STOP_LOSS_PCT", 35),
@@ -78,11 +82,12 @@ export function rulesFromEnv(overrides: Partial<SnipeRules> = {}): SnipeRules {
 export interface Decision { fire: boolean; why: string[] }
 
 /** Pure filter over the intel. Every rejection names its rule so the log explains itself. */
-export function decide(intel: LaunchIntel, score: Score, rules: SnipeRules, openCount: number, farmTwins = 0): Decision {
+export function decide(intel: LaunchIntel, score: Score, rules: SnipeRules, openCount: number, farmTwins = 0, spentWei = 0n): Decision {
   // A launch the RPC would not let us read is not a launch that failed the rules; say so and stop.
   if (!intel.meta && !intel.record && !intel.curve) return { fire: false, why: [`unreadable: ${intel.errors[0] ?? "no data"}`] };
   const why: string[] = [];
   if (openCount >= rules.maxOpenPositions) why.push(`open positions ${openCount} ≥ ${rules.maxOpenPositions}`);
+  if (spentWei + rules.ethPerBuy > rules.sessionBudgetWei) why.push(`session budget ${eth(rules.sessionBudgetWei)} ETH reached (${eth(spentWei)} spent)`);
   if (farmTwins > rules.maxFarmTwins) why.push(`launch farm: ${farmTwins} twins in 30 min > ${rules.maxFarmTwins}`);
   if (rules.ethPairsOnly && intel.pair.symbol !== "ETH") why.push(`pair is ${intel.pair.symbol}, not ETH`);
   if (score.total < rules.minScore) why.push(`score ${score.total} < ${rules.minScore}`);
@@ -115,7 +120,7 @@ export async function waitForTax(curve: Address, recipient: Address, maxBps: num
   }
 }
 
-export interface EngineOpts { live: boolean; rules: SnipeRules; onEvent?: (e: Record<string, unknown>) => void }
+export interface EngineOpts { live: boolean; rules: SnipeRules; onEvent?: (e: Record<string, unknown>) => void; /** Read and score but do not fire until resume() is called. */ startPaused?: boolean }
 
 /** What the board (or any caller) can do to a running engine. Rules are read live, so editing them takes effect on the next launch. */
 export interface EngineHandle {
@@ -124,6 +129,8 @@ export interface EngineHandle {
   pause: () => void;
   resume: () => void;
   paused: () => boolean;
+  /** ETH spent on entries in this session (wei). */
+  spent: () => bigint;
   /** Sell a position now, whatever the exit rules say. Dry-run positions close at the current quote. */
   close: (positionId: string) => Promise<{ ethOut: bigint; pnlPct: number; venue: string; hash?: string }>;
   rules: SnipeRules;
@@ -140,14 +147,15 @@ export function startEngine(opts: EngineOpts): EngineHandle {
   const limit = limiter(3);
   const deployers = new DeployerIndex();
   const farms = new FarmDetector();
-  let paused = false;
+  let paused = !!opts.startPaused;
+  let spent = 0n;
   deployers.start(
     (b) => { log.info(c.muted(`deployer index ready: ${b.launches} launches, ${b.graduations} graduations in the last ${deployers.windowBlocks} blocks`)); emit({ kind: "index", launches: b.launches, graduations: b.graduations }); },
     (e, sec) => log.warn(`deployer index: ${e.message.split("\n")[0]}; scoring without deployer history, retry in ${sec} s`),
   );
   const sweep = setInterval(() => { if (deployers.ready) void deployers.sweepGraduations().catch(() => undefined); }, 60_000);
 
-  log.info(`${c.neon("bodkin")} ${c.muted(`snipe · ${live ? c.onNeon(" LIVE ") : "dry run"} · ${eth(rules.ethPerBuy)} ETH per shot · tax ceiling ${bps(rules.maxOpeningTaxBps)} · min score ${rules.minScore} · TP ${rules.exits.takeProfitPct}% SL ${rules.exits.stopLossPct}% trail ${rules.exits.trailingPct}% hold ${rules.exits.maxHoldMin}m`)}`);
+  log.info(`${c.neon("bodkin")} ${c.muted(`snipe · ${live ? c.onNeon(" LIVE ") : "dry run"} · ${eth(rules.ethPerBuy)} ETH per shot · budget ${eth(rules.sessionBudgetWei)} ETH · max open ${rules.maxOpenPositions} · tax ceiling ${bps(rules.maxOpeningTaxBps)} · min score ${rules.minScore} · TP ${rules.exits.takeProfitPct}% SL ${rules.exits.stopLossPct}% trail ${rules.exits.trailingPct}% hold ${rules.exits.maxHoldMin}m`)}`);
 
   const onLaunch = async (ev: LaunchEvent) => {
     const t0 = Date.now();
@@ -157,8 +165,8 @@ export function startEngine(opts: EngineOpts): EngineHandle {
     const { twins } = farms.note(intel);
     const score = scoreLaunch(intel, { deployer: dq, farmTwins: twins });
     const sym = intel.meta?.symbol ? `$${intel.meta.symbol}` : short(ev.token);
-    const d = decide(intel, score, rules, openPositions().length + busy.size, twins);
-    if (d.fire && paused) d.why.push("paused");
+    const d = decide(intel, score, rules, openPositions().length + busy.size, twins, spent);
+    if (d.fire && paused) d.why.push(live ? "not armed" : "demo not started");
     const soc = hasSocials(intel.meta);
     emit({
       kind: "launch", token: ev.token, curve: ev.curve, symbol: sym, name: intel.meta?.name ?? "(unreadable)", score: score.total, verdict: score.verdict,
@@ -183,8 +191,9 @@ export function startEngine(opts: EngineOpts): EngineHandle {
       if (!w.ok) { log.info(`${c.muted(hhmmss())}  ${c.muted("hold ")} ${sym.padEnd(10)} tax still ${bps(w.taxBps)} after ${w.waitedMs} ms, skipped`); emit({ kind: "hold", token: ev.token, taxBps: w.taxBps }); return; }
       const res = await buyOnCurve(ev.curve, rules.ethPerBuy, rules.slippageBps, !live);
       const got = res.tokensOut ?? res.tokensQuoted;
+      spent += rules.ethPerBuy;
       const pos = openPosition({ token: ev.token, curve: ev.curve, symbol: intel.meta?.symbol ?? "?", name: intel.meta?.name ?? "?", openedAt: Math.floor(Date.now() / 1000), entryTx: res.hash, dryRun: !live, entryEth: rules.ethPerBuy.toString(), tokens: got.toString() });
-      log.info(`${c.muted(hhmmss())}  ${c.onNeon(" FIRE ")} ${sym.padEnd(10)} ${live ? "bought" : "would buy"} ${eth(rules.ethPerBuy)} ETH → ${(Number(got) / 1e18 / 1e6).toFixed(2)}M tokens at tax ${bps(w.taxBps)} after ${w.waitedMs} ms wait${res.hash ? "  " + c.muted(res.hash) : ""}`);
+      log.info(`${c.muted(hhmmss())}  ${c.onNeon(" FIRE ")} ${osc(sym.padEnd(10), links.axiom())} ${live ? "bought" : "would buy"} ${eth(rules.ethPerBuy)} ETH → ${(Number(got) / 1e18 / 1e6).toFixed(2)}M tokens at tax ${bps(w.taxBps)} after ${w.waitedMs} ms wait  ${c.muted(osc(ev.token, links.pons(ev.token)))}${res.hash ? "  " + c.muted(res.hash) : ""}`);
       emit({ kind: "fire", token: ev.token, symbol: sym, ethIn: rules.ethPerBuy.toString(), tokens: got.toString(), taxBps: w.taxBps, waitedMs: w.waitedMs, tx: res.hash ?? null, live, positionId: pos.id });
     } catch (e) {
       log.warn(`${sym} ${live ? "buy failed" : "dry-run quote failed"}: ${(e as Error).message.split("\n")[0]}`);
@@ -226,11 +235,13 @@ export function startEngine(opts: EngineOpts): EngineHandle {
     }
   };
   const timer = setInterval(() => { void manage(); }, 5_000);
+  if (paused) log.info(c.muted(`${hhmmss()}  feed only: launches are read and scored, nothing fires until start`));
   return {
     stop: () => { stopWatch(); clearInterval(timer); clearInterval(sweep); },
-    pause: () => { paused = true; emit({ kind: "paused", paused: true }); log.info(c.muted(`${hhmmss()}  paused: launches are read and scored, nothing fires`)); },
-    resume: () => { paused = false; emit({ kind: "paused", paused: false }); log.info(c.muted(`${hhmmss()}  resumed`)); },
+    pause: () => { paused = true; emit({ kind: "paused", paused: true }); log.info(c.muted(`${hhmmss()}  stopped: launches are read and scored, nothing fires`)); },
+    resume: () => { paused = false; emit({ kind: "paused", paused: false }); log.info(c.muted(`${hhmmss()}  ${live ? "armed: live buys are on" : "demo started: dry-run buys are on"}`)); },
     paused: () => paused,
+    spent: () => spent,
     close: async (positionId: string) => {
       const pos = openPositions().find((p) => p.id === positionId);
       if (!pos) throw new Error("no open position with that id");

@@ -14,7 +14,7 @@ const addr = (s: string): Address => {
   return getAddress(s);
 };
 
-interface SnipeCli { live?: boolean; eth?: string; minScore?: string; maxTaxBps?: string; keyword?: string; deployer?: string[]; maxOpen?: string; for?: string; slippage?: string; allowPairs?: boolean }
+interface SnipeCli { live?: boolean; eth?: string; minScore?: string; maxTaxBps?: string; keyword?: string; deployer?: string[]; maxOpen?: string; for?: string; slippage?: string; allowPairs?: boolean; budget?: string; yes?: boolean }
 
 async function snipeRules(o: SnipeCli) {
   const { rulesFromEnv } = await import("./snipe.js");
@@ -27,7 +27,32 @@ async function snipeRules(o: SnipeCli) {
     ...(o.deployer?.length ? { deployers: new Set(o.deployer.map((d) => d.toLowerCase())) } : {}),
     ...(o.maxOpen ? { maxOpenPositions: Number(o.maxOpen) } : {}),
     ...(o.allowPairs ? { ethPairsOnly: false } : {}),
+    ...(o.budget ? { sessionBudgetWei: parseEther(o.budget) } : {}),
   });
+}
+
+/**
+ * Before real money moves: show the signer, its balance and what this session may spend, and make the person type it.
+ * `--yes` skips the prompt for scripts. Refuses outright when the wallet cannot cover one buy.
+ */
+async function armLive(rules: { ethPerBuy: bigint; maxOpenPositions: number; sessionBudgetWei: bigint }, yes: boolean | undefined): Promise<void> {
+  const { requireAccount } = await import("./trade/wallet.js");
+  const acct = requireAccount();
+  const [bal, price] = await Promise.all([publicClient.getBalance({ address: acct.address }), ethUsd()]);
+  const usdOf = (wei: bigint) => usd(price === null ? null : (Number(wei) / 1e18) * price);
+  console.log(`${c.onNeon(" LIVE ")} this session can spend real ETH`);
+  console.log(`   wallet     ${acct.address}`);
+  console.log(`   balance    ${eth(bal)} ETH ${c.muted(usdOf(bal))}`);
+  console.log(`   per buy    ${eth(rules.ethPerBuy)} ETH ${c.muted(usdOf(rules.ethPerBuy))}   max open ${rules.maxOpenPositions}`);
+  console.log(`   budget     ${eth(rules.sessionBudgetWei)} ETH ${c.muted(usdOf(rules.sessionBudgetWei))} for the whole session, then it stops firing`);
+  if (bal < rules.ethPerBuy) { log.error(`balance ${eth(bal)} ETH does not cover one buy of ${eth(rules.ethPerBuy)} ETH; nothing armed`); process.exit(1); }
+  if (rules.sessionBudgetWei > bal) console.log(`   ${c.loss("!")} the budget is above the balance; the balance is the real cap`);
+  if (yes) return;
+  const { createInterface } = await import("node:readline/promises");
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = (await rl.question(`   type ${c.white("arm")} to continue, anything else to stay in dry run: `)).trim().toLowerCase();
+  rl.close();
+  if (answer !== "arm") { console.log(c.muted("   not armed; run without --live for a dry run")); process.exit(0); }
 }
 
 const fmtTokens = (n: bigint) => (Number(n) / 1e18).toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -45,12 +70,15 @@ export function registerTradeCommands(program: Command): void {
     .option("--deployer <address...>", "only launches from these deployers")
     .option("--max-open <n>", "max simultaneous positions (default 3)")
     .option("--allow-pairs", "also fire on non-ETH pairs (USDG, stock tokens)")
+    .option("--budget <eth>", "stop firing after this much ETH has been spent this session (default SNIPE_BUDGET_ETH)")
+    .option("--yes", "skip the live confirmation prompt (scripts)")
     .option("--for <seconds>", "stop after this many seconds")
     .action(async (o: SnipeCli) => {
       const { startEngine } = await import("./snipe.js");
       const { notify } = await import("./alerts/telegram.js");
       const rules = await snipeRules(o);
       banner();
+      if (o.live) await armLive(rules, o.yes);
       const engine = startEngine({ live: !!o.live, rules, onEvent: (e) => { if (e.kind === "fire" || e.kind === "exit") void notify(e); } });
       if (o.for) setTimeout(() => { engine.stop(); console.log(c.muted(`\nbodkin stopped after ${o.for}s`)); process.exit(0); }, Number(o.for) * 1000).unref();
       process.on("SIGINT", () => { engine.stop(); console.log(c.muted("\nbodkin stopped")); process.exit(0); });
@@ -160,10 +188,13 @@ export function registerTradeCommands(program: Command): void {
     .option("--min-score <n>", "minimum score to fire")
     .option("--keyword <regex>", "only launches matching")
     .option("--allow-pairs", "also fire on non-ETH pairs")
+    .option("--budget <eth>", "stop firing after this much ETH has been spent this session (default SNIPE_BUDGET_ETH)")
+    .option("--yes", "skip the live confirmation prompt (scripts)")
     .action(async (o: SnipeCli & { port: string }) => {
       const { startBoard } = await import("./board/server.js");
       const rules = await snipeRules(o);
       banner();
+      if (o.live) await armLive(rules, o.yes);
       await startBoard({ port: Number(o.port), live: !!o.live, rules });
     });
 }
