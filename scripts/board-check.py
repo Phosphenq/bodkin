@@ -25,13 +25,18 @@ async def main() -> None:
         # KPI numbers render
         seen = await page.locator("#s-seen").inner_text()
         print("seen", seen)
-        # pause / resume round-trips through POST
-        await page.click("#pause")
-        await page.wait_for_timeout(600)
-        assert "paused" in (await page.locator("#mode-text").inner_text()), "pause did not register"
-        await page.click("#pause")
-        await page.wait_for_timeout(600)
-        assert "paused" not in (await page.locator("#mode-text").inner_text()), "resume did not register"
+        # the board starts as a feed; start demo / stop demo round-trip through POST
+        assert "feed only" in (await page.locator("#mode-text").inner_text()), "board should start in feed-only mode"
+        await page.click("#run")
+        await page.wait_for_timeout(700)
+        assert "demo trading" in (await page.locator("#mode-text").inner_text()), "start demo did not register"
+        await page.click("#run")
+        await page.wait_for_timeout(700)
+        assert "feed only" in (await page.locator("#mode-text").inner_text()), "stop demo did not register"
+        # the pulse arrives and the notice stays hidden while the engine answers
+        await page.wait_for_timeout(11_000)
+        assert await page.evaluate("Date.now() - state.lastTick < 15000"), "no tick from the engine"
+        assert await page.evaluate("document.getElementById('notice').hidden"), "notice shown while the engine is healthy"
         # rule stepper edits the running engine
         before = await page.locator('[data-rule="minScore"]').input_value()
         await page.click('[data-step="minScore"][data-d="1"]')
@@ -53,6 +58,9 @@ async def main() -> None:
         assert "open" in (await page.get_attribute("#drawer", "class")), "drawer did not open"
         title = await page.locator("#drawer h3").inner_text()
         print("drawer", title)
+        links = await page.locator("#drawer .links a").all_inner_texts()
+        print("drawer links", links)
+        assert "axiom" in links and "fomo" in links and "dexscreener" not in links
         await page.screenshot(path=str(OUT / "board-drawer.png"))
         await page.keyboard.press("Escape")
         await page.wait_for_timeout(400)
