@@ -2,16 +2,19 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { feedHealth } from "../pons/launches.js";
 import { startEngine, type SnipeRules } from "../snipe.js";
 import { loadPositions } from "../trade/positions.js";
+import { links } from "../util/links.js";
 import { ethUsd } from "../util/price.js";
+import { gateStats } from "../util/rpcGate.js";
 import { c } from "../util/log.js";
 
 /**
  * The board. Binds 127.0.0.1 only. GET serves the page, the event stream and a state snapshot; POST reaches
- * exactly four verbs on the in-process engine: pause, resume, close a position, and edit a numeric rule.
- * Nothing here can buy: firing is the engine's decision under the rules on screen, and `--live` is a launch
- * flag, not a button.
+ * exactly four verbs on the in-process engine: start (resume), stop (pause), close a position, and edit a numeric
+ * rule. The engine starts stopped: the page is a live feed until someone presses start. Nothing here can buy on
+ * demand; firing is the engine's decision under the rules on screen, and `--live` is a launch flag, not a button.
  */
 
 export interface BoardOpts { port: number; live: boolean; rules: SnipeRules }
@@ -51,13 +54,13 @@ export async function startBoard(opts: BoardOpts): Promise<void> {
   const push = (e: Record<string, unknown>) => {
     if (e.kind === "fire") fired++;
     if (e.kind === "launch") seen++;
-    recent.push(e);
-    if (recent.length > 400) recent.shift();
+    if (e.kind !== "tick") { recent.push(e); if (recent.length > 400) recent.shift(); }
     const line = `data: ${JSON.stringify(e)}\n\n`;
     for (const res of clients) res.write(line);
   };
 
-  const engine = startEngine({ live: opts.live, rules: opts.rules, onEvent: push });
+  // The engine starts stopped: a board is a feed until a person presses start.
+  const engine = startEngine({ live: opts.live, rules: opts.rules, onEvent: push, startPaused: true });
 
   const rulesView = () => ({
     ethPerBuy: engine.rules.ethPerBuy.toString(),
@@ -70,10 +73,18 @@ export async function startBoard(opts: BoardOpts): Promise<void> {
     ethPairsOnly: engine.rules.ethPairsOnly,
     keyword: engine.rules.keyword?.source ?? null,
     maxOpenPositions: engine.rules.maxOpenPositions,
+    sessionBudgetEth: engine.rules.sessionBudgetWei.toString(),
     exits: engine.rules.exits,
     editable: Object.keys(EDITABLE),
   });
-  const hello = () => ({ kind: "hello", live: opts.live, paused: engine.paused(), rules: rulesView(), startedAt, seen, fired, positions: positionsView() });
+  const health = () => {
+    const f = feedHealth();
+    return { feed: f, lastLaunchAgeSec: f.lastLaunchAt ? Math.round((Date.now() - f.lastLaunchAt) / 1000) : null, gate: gateStats(), spentWei: engine.spent().toString() };
+  };
+  const hello = () => ({ kind: "hello", live: opts.live, paused: engine.paused(), rules: rulesView(), startedAt, seen, fired, positions: positionsView(), refs: { axiom: links.axiom(), fomo: links.fomo() }, health: health() });
+
+  // A pulse every 10 s so the page can tell "quiet chain" from "dead engine".
+  const pulse = setInterval(() => push({ kind: "tick", t: Date.now(), paused: engine.paused(), health: health() }), 10_000);
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -93,8 +104,8 @@ export async function startBoard(opts: BoardOpts): Promise<void> {
         return;
       }
       if (req.method === "POST") {
-        if (url.pathname === "/api/pause") { engine.pause(); json(res, 200, { paused: true }); return; }
-        if (url.pathname === "/api/resume") { engine.resume(); json(res, 200, { paused: false }); return; }
+        if (url.pathname === "/api/start" || url.pathname === "/api/resume") { engine.resume(); json(res, 200, { paused: false }); return; }
+        if (url.pathname === "/api/stop" || url.pathname === "/api/pause") { engine.pause(); json(res, 200, { paused: true }); return; }
         if (url.pathname.startsWith("/api/close/")) {
           const id = decodeURIComponent(url.pathname.slice("/api/close/".length));
           const r = await engine.close(id);
@@ -126,6 +137,6 @@ export async function startBoard(opts: BoardOpts): Promise<void> {
   });
 
   await new Promise<void>((resolve) => server.listen(opts.port, "127.0.0.1", resolve));
-  console.log(`${c.neon("bodkin")} ${c.muted("board")}  http://127.0.0.1:${opts.port}  ${opts.live ? c.onNeon(" LIVE ") : c.muted("dry run")}`);
-  process.on("SIGINT", () => { engine.stop(); server.close(); process.exit(0); });
+  console.log(`${c.neon("bodkin")} ${c.muted("board")}  http://127.0.0.1:${opts.port}  ${opts.live ? c.onNeon(" LIVE ") : c.muted("dry run")}  ${c.muted("feed only until you press start")}`);
+  process.on("SIGINT", () => { engine.stop(); clearInterval(pulse); server.close(); process.exit(0); });
 }

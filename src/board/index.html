@@ -148,6 +148,10 @@
   @keyframes step { 50% { transform: translateY(1px); } }
   .konami header h1 { background: linear-gradient(90deg, var(--neon), var(--yellow), var(--neon)); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; animation: shimmer 2s linear infinite; }
   @keyframes shimmer { to { background-position: -200% 0; } }
+  .notice { margin: 14px 28px -6px; padding: 10px 14px; border: 1px solid var(--yellow); border-radius: 14px; color: var(--yellow); font-size: 13px; display: flex; gap: 10px; align-items: center; }
+  .notice.bad { border-color: var(--loss); color: var(--loss); }
+  .btn.arm { border-color: var(--loss); color: var(--loss); }
+  .btn.arm:hover { background: var(--loss); color: #fff; border-color: var(--loss); }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -157,11 +161,12 @@
   <div><h1>bodkin</h1><div class="sub">pons v2 · chain 4663 · <span id="tempo">…</span></div></div>
   <div class="right">
     <span id="mode" class="pill"><span class="dot"></span><span id="mode-text">connecting</span></span>
-    <button class="btn" id="pause" title="p">pause</button>
+    <button class="btn" id="run" title="p">start demo</button>
     <button class="btn ghost" id="sound" title="beep on fire">sound off</button>
     <span class="clock" id="clock"></span>
   </div>
 </header>
+<div class="notice" id="notice" hidden></div>
 <main>
   <section class="stats">
     <div class="stat" id="st-seen"><div class="v" id="s-seen">0</div><div class="k">launches</div></div>
@@ -211,12 +216,25 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const feed = $("feed"), positions = $("positions"), drawer = $("drawer");
-  const state = { seen: 0, fired: 0, startedAt: Date.now(), pnl: 0n, live: false, paused: false, pos: new Map(), rows: new Map(), filter: "all", q: "", sound: false, sel: null, rules: null, tempo: [] };
+  const state = { seen: 0, fired: 0, startedAt: Date.now(), pnl: 0n, live: false, paused: true, pos: new Map(), rows: new Map(), filter: "all", q: "", sound: false, sel: null, rules: null, tempo: [], refs: {}, health: null, lastTick: Date.now(), connected: false };
   const fmtEth = (wei) => (Number(BigInt(wei)) / 1e18).toFixed(4);
   const hhmm = (t) => new Date(t).toISOString().slice(11, 19);
   const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "?";
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-  const post = (path, body) => fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
+  /* every button goes through here: an 8 s timeout and a toast instead of a silent click */
+  async function post(path, body) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+      return data;
+    } catch (e) {
+      toast(e.name === "AbortError" ? "the engine did not answer in 8 s, restart bodkin" : "failed: " + e.message);
+      throw e;
+    } finally { clearTimeout(t); }
+  }
   let toastTimer;
   function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1400); }
   function copy(text) { navigator.clipboard?.writeText(text).then(() => toast("copied " + short(text))).catch(() => toast("clipboard blocked")); }
@@ -225,18 +243,35 @@
 
   /* header state */
   function renderMode() {
-    const m = $("mode"), t = $("mode-text");
-    m.className = "pill" + (state.live ? " live" : "") + (state.paused ? " paused" : "");
-    t.textContent = state.paused ? "paused" : state.live ? "LIVE" : "dry run";
-    $("pause").textContent = state.paused ? "resume" : "pause";
-    $("pause").classList.toggle("on", state.paused);
+    const m = $("mode"), t = $("mode-text"), run = $("run");
+    const armed = state.live && !state.paused;
+    m.className = "pill" + (armed ? " live" : "") + (!state.paused && !state.live ? " paused" : "");
+    t.textContent = !state.connected ? "connecting" : state.live ? (state.paused ? "LIVE · not armed" : "LIVE · armed") : (state.paused ? "feed only" : "demo trading");
+    run.textContent = state.live ? (state.paused ? "arm live sniping" : "disarm") : (state.paused ? "start demo" : "stop demo");
+    run.className = "btn" + (state.live && state.paused ? " arm" : "") + (!state.paused ? " on" : "");
     $("foot-mode").textContent = state.live ? "LIVE" : "dry run";
     $("pos-mode").textContent = state.live ? "live" : "dry";
     $("sound").textContent = state.sound ? "sound on" : "sound off";
     $("sound").classList.toggle("on", state.sound);
   }
-  $("pause").onclick = () => post(state.paused ? "/api/resume" : "/api/pause").then((r) => { state.paused = r.paused; renderMode(); toast(state.paused ? "paused: nothing fires" : "resumed"); });
+  $("run").onclick = async () => {
+    if (state.live && state.paused && !confirm("Arm LIVE sniping? Real ETH leaves your wallet under the rules on screen, up to the session budget. Type ok to continue.")) return;
+    const b = $("run"); b.disabled = true;
+    try { const r = await post(state.paused ? "/api/start" : "/api/stop"); state.paused = r.paused; renderMode(); toast(state.paused ? "stopped: launches keep coming, nothing fires" : state.live ? "armed" : "demo started: dry-run buys are on"); }
+    finally { b.disabled = false; }
+  };
   $("sound").onclick = () => { state.sound = !state.sound; renderMode(); if (state.sound) beep(); };
+
+  /* the pulse: the engine ticks every 10 s; silence means it is gone, not that the chain is quiet */
+  function renderNotice() {
+    const n = $("notice");
+    const sinceTick = Date.now() - state.lastTick;
+    if (state.connected && sinceTick > 35000) { n.hidden = false; n.className = "notice bad"; n.textContent = `the engine has not answered for ${Math.round(sinceTick / 1000)} s. Close its console window and start it again.`; return; }
+    const h = state.health;
+    if (h && h.lastLaunchAgeSec != null && h.lastLaunchAgeSec > 120) { n.hidden = false; n.className = "notice"; n.textContent = `no launch for ${h.lastLaunchAgeSec} s · feed ${h.feed.mode}${h.feed.note ? " · " + h.feed.note : ""}${h.gate.coolingDown ? " · rpc cooling down after a 429" : ""}`; return; }
+    if (h && h.gate.endpoints.some((e) => e.benched)) { n.hidden = false; n.className = "notice"; n.textContent = `rpc ${h.gate.endpoints.filter((e) => e.benched).map((e) => e.label).join(", ")} benched, using the other endpoint`; return; }
+    n.hidden = true;
+  }
 
   /* stats */
   function render() {
@@ -305,7 +340,8 @@
       <div class="links">
         <a class="btn sm" target="_blank" rel="noopener" href="https://www.ponsfamily.com/token/${e.token}">pons</a>
         <a class="btn sm" target="_blank" rel="noopener" href="https://robinhoodchain.blockscout.com/token/${e.token}">explorer</a>
-        <a class="btn sm" target="_blank" rel="noopener" href="https://dexscreener.com/robinhood/${e.token}">dexscreener</a>
+        ${state.refs.axiom ? `<a class="btn sm" target="_blank" rel="noopener" data-ca="${e.token}" href="${esc(state.refs.axiom)}" title="opens Axiom Pulse on Robinhood Chain and copies the contract for the search box">axiom</a>` : ""}
+        ${state.refs.fomo ? `<a class="btn sm" target="_blank" rel="noopener" data-ca="${e.token}" href="${esc(state.refs.fomo)}" title="opens FOMO and copies the contract">fomo</a>` : ""}
         ${d.socials?.x ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.x)}">x</a>` : ""}
         ${d.socials?.web ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.web)}">web</a>` : ""}
         ${d.socials?.tg ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(d.socials.tg)}">tg</a>` : ""}
@@ -330,7 +366,10 @@
   }
   function closeDrawer() { drawer.classList.remove("open"); document.querySelectorAll("tr.sel").forEach((x) => x.classList.remove("sel")); state.sel = null; }
   $("drawer-close").onclick = closeDrawer;
-  drawer.addEventListener("click", (ev) => { const c = ev.target.closest("[data-copy]"); if (c) copy(c.dataset.copy); });
+  drawer.addEventListener("click", (ev) => {
+    const c = ev.target.closest("[data-copy]"); if (c) { copy(c.dataset.copy); return; }
+    const a = ev.target.closest("[data-ca]"); if (a) navigator.clipboard?.writeText(a.dataset.ca).then(() => toast("contract copied, paste it in the search box")).catch(() => {});
+  });
 
   /* positions */
   function renderPositions() {
@@ -356,6 +395,7 @@
     const ed = new Set(r.editable || []);
     const rows = [
       ["per buy", fmtEth(r.ethPerBuy) + " ETH", null],
+      ["session budget", fmtEth(r.sessionBudgetEth || "0") + " ETH", null],
       ["min score", r.minScore, "minScore"],
       ["max open", r.maxOpenPositions, "maxOpenPositions"],
       ["tax ceiling", r.maxOpeningTaxBps, "maxOpeningTaxBps", "bps"],
@@ -386,9 +426,11 @@
   function onEvent(e) {
     if (e.kind === "hello") {
       state.live = e.live; state.paused = !!e.paused; state.startedAt = e.startedAt; state.seen = e.seen || 0; state.fired = e.fired || 0; state.rules = e.rules;
+      state.refs = e.refs || {}; state.health = e.health || null; state.lastTick = Date.now(); state.connected = true;
       for (const p of e.positions || []) state.pos.set(p.id, { symbol: p.symbol, ethIn: p.ethIn, pnl: p.pnl, status: p.status, venue: "curve", reason: p.reason, closedAt: p.closedAt });
       renderMode(); renderRules();
-    } else if (e.kind === "launch") { state.seen++; state.tempo.push(e.t); if (state.tempo.length > 500) state.tempo.shift(); addRow(e, true); if (e.fire) { bump("st-seen"); } }
+    } else if (e.kind === "tick") { state.lastTick = Date.now(); state.health = e.health || null; if (state.paused !== !!e.paused) { state.paused = !!e.paused; renderMode(); } }
+    else if (e.kind === "launch") { state.seen++; state.tempo.push(e.t); if (state.tempo.length > 500) state.tempo.shift(); addRow(e, true); if (e.fire) { bump("st-seen"); } }
     else if (e.kind === "fire") { state.fired++; bump("st-fire"); beep(); state.pos.set(e.positionId, { symbol: e.symbol.replace(/^\$/, ""), ethIn: e.ethIn, pnl: 0, status: "open", venue: "curve" }); toast(`${state.live ? "bought" : "dry fire"} ${e.symbol} at tax ${(e.taxBps / 100).toFixed(2)}% after ${e.waitedMs} ms`); }
     else if (e.kind === "mark") { const p = state.pos.get(e.positionId); if (p) { p.pnl = e.pnlPct; p.venue = e.venue; p.peak = e.peakPct; } }
     else if (e.kind === "exit") { const p = state.pos.get(e.positionId); if (p) { p.pnl = e.pnlPct; p.status = "closed"; p.reason = e.reason; p.closedAt = Date.now(); state.pnl += BigInt(e.ethOut) - BigInt(p.ethIn); bump("st-pnl"); } }
@@ -400,16 +442,16 @@
   function connect() {
     const es = new EventSource("/events");
     es.onmessage = (m) => onEvent(JSON.parse(m.data));
-    es.onerror = () => { $("mode-text").textContent = "reconnecting"; };
+    es.onerror = () => { state.connected = false; $("mode-text").textContent = "reconnecting"; };
   }
   connect();
-  setInterval(() => { $("clock").textContent = new Date().toISOString().slice(11, 19) + " UTC"; render(); }, 1000);
+  setInterval(() => { $("clock").textContent = new Date().toISOString().slice(11, 19) + " UTC"; render(); renderNotice(); }, 1000);
 
   /* keys */
   document.addEventListener("keydown", (ev) => {
     if (ev.target.tagName === "INPUT") { if (ev.key === "Escape") ev.target.blur(); return; }
     if (ev.key === "/") { ev.preventDefault(); $("search").focus(); }
-    else if (ev.key === "p") $("pause").click();
+    else if (ev.key === "p") $("run").click();
     else if (ev.key === "f") document.querySelector('[data-filter="fire"]').click();
     else if (ev.key === "a") document.querySelector('[data-filter="all"]').click();
     else if (ev.key === "Escape") closeDrawer();
