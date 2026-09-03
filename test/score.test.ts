@@ -5,14 +5,14 @@ import { scoreLaunch } from "../src/score.js";
 import { decide, rulesFromEnv } from "../src/snipe.js";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as const;
-const A = "0x89e68b749a1630f408f9a4efb7a77246cfef8043" as const;
-const B = "0xca1ca7074c9af847e3c2c4ae8b828fb7e9329d2f" as const;
+const A = "0x1111111111111111111111111111111111111111" as const;
+const B = "0x2222222222222222222222222222222222222222" as const;
 
-/** Looprat as read on 2026-09-03: 3% dev buy, 1% creator tax, fees to a third party, X + website, 4 exempt wallets. */
-function looprat(over: Partial<LaunchIntel> = {}): LaunchIntel {
+/** The builder-launch shape seen on mainnet this week: 3% dev buy, 1% creator tax, fees to a third party, X + website, 4 exempt wallets. */
+function builderLaunch(over: Partial<LaunchIntel> = {}): LaunchIntel {
   return {
-    ev: { token: "0x642d30c84211ade7768fe557fbaed7224e2068c7", curve: "0x4c94b5e83bbecb365e8183d2682001c259f1a723", deployer: A, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 42n * 10n ** 17n, blockNumber: 53_017_112n, txHash: "0x910fb4ff4651485ef01a781321a93903d36758357361a7f6d22c3d00f3830969", logIndex: 0, seenAtMs: 0 },
-    meta: { name: "Autonomous Loop Agent", symbol: "Looprat", logo: "ipfs://x", description: "A local autonomous agent harness that works the night shift on your tasks so you don't have to", socials: { twitter: "https://x.com/exittliquidity/status/1", telegram: "", discord: "", website: "https://github.com/mrbuzzoni/loop-rat", farcaster: "" } },
+    ev: { token: "0x3333333333333333333333333333333333333333", curve: "0x4444444444444444444444444444444444444444", deployer: A, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 42n * 10n ** 17n, blockNumber: 53_000_000n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
+    meta: { name: "Night Shift Harness", symbol: "SHIFT", logo: "ipfs://x", description: "A local agent harness that works the night shift on your tasks so you do not have to", socials: { twitter: "https://x.com/example/status/1", telegram: "", discord: "", website: "https://github.com/example/shift", farcaster: "" } },
     record: { creatorFeeRecipient: B, creatorTaxBps: 100, phase: 0, poolFee: 0, tickSpacing: 200, buybackEnabled: false },
     tx: { from: A, to: ZERO, valueWei: 0n, devBuyWei: 53_519_145_802_650_970n, devTokens: 30_000_000n * 10n ** 18n, exemptions: [A, B, ZERO, ZERO], recipient: A, timestamp: 1_788_397_521 },
     curve: { quoteReserve: 1_733_000_000_000_000_000n, tokenReserve: 970_000_000n * 10n ** 18n, realQuoteReserve: 53_000_000_000_000_000n, sellableTokens: 684_285_714n * 10n ** 18n, reservedTokens: 285_714_285n * 10n ** 18n, graduationThreshold: 42n * 10n ** 17n, feeBps: 100n, creatorTaxBps: 100n, openingTaxBps: 0n, graduated: false, readyToGraduate: false, launchedAt: 1_788_397_521, readAtMs: 0 },
@@ -22,38 +22,38 @@ function looprat(over: Partial<LaunchIntel> = {}): LaunchIntel {
   };
 }
 
-test("a Looprat-shaped launch scores FIRE even with its declared bundle", () => {
-  const s = scoreLaunch(looprat(), { deployer: { prior: 0, graduated: 0 } });
+test("a builder-shaped launch scores FIRE even with its declared bundle", () => {
+  const s = scoreLaunch(builderLaunch(), { deployer: { prior: 0, graduated: 0 } });
   assert.equal(s.verdict, "FIRE");
   assert.ok(s.reasons.some((r) => r.includes("third party")));
   assert.ok(s.reasons.some((r) => r.includes("declared bundle")));
 });
 
 test("a serial deployer with no graduations and no socials is a SKIP", () => {
-  const i = looprat({ meta: { ...looprat().meta!, socials: { twitter: "", telegram: "", discord: "", website: "", farcaster: "" } } });
+  const i = builderLaunch({ meta: { ...builderLaunch().meta!, socials: { twitter: "", telegram: "", discord: "", website: "", farcaster: "" } } });
   const s = scoreLaunch(i, { deployer: { prior: 185, graduated: 0 } });
   assert.equal(s.verdict, "SKIP");
 });
 
 test("dev share over 10% costs 25 points", () => {
-  const heavy = looprat({ tx: { ...looprat().tx!, devTokens: 181_600_000n * 10n ** 18n } });
-  const a = scoreLaunch(looprat()).total;
+  const heavy = builderLaunch({ tx: { ...builderLaunch().tx!, devTokens: 181_600_000n * 10n ** 18n } });
+  const a = scoreLaunch(builderLaunch()).total;
   const b = scoreLaunch(heavy).total;
   assert.equal(a - b, 40, "15 for the good band minus -25 for over 10%");
 });
 
-test("the sniper refuses Looprat by default because four exempt wallets is a declared bundle", () => {
+test("the sniper refuses a launch with four exempt wallets by default, because that is a declared bundle", () => {
   const rules = rulesFromEnv();
-  const s = scoreLaunch(looprat(), { deployer: { prior: 0, graduated: 0 } });
-  const d = decide(looprat(), s, rules, 0);
+  const s = scoreLaunch(builderLaunch(), { deployer: { prior: 0, graduated: 0 } });
+  const d = decide(builderLaunch(), s, rules, 0);
   assert.equal(d.fire, false);
   assert.ok(d.why.some((w) => w.includes("exempt wallets")));
 });
 
 test("the sniper fires when the bundle rule is relaxed, and stops at the position cap", () => {
   const rules = rulesFromEnv({ maxExemptWallets: 4 });
-  const s = scoreLaunch(looprat(), { deployer: { prior: 0, graduated: 0 } });
-  assert.equal(decide(looprat(), s, rules, 0).fire, true);
-  assert.equal(decide(looprat(), s, rules, 3).fire, false);
-  assert.equal(decide(looprat({ pair: { address: "0x1111111111111111111111111111111111111111", symbol: "USDG", decimals: 6, usdPerUnit: 1 } }), s, rules, 0).fire, false);
+  const s = scoreLaunch(builderLaunch(), { deployer: { prior: 0, graduated: 0 } });
+  assert.equal(decide(builderLaunch(), s, rules, 0).fire, true);
+  assert.equal(decide(builderLaunch(), s, rules, 3).fire, false);
+  assert.equal(decide(builderLaunch({ pair: { address: "0x1111111111111111111111111111111111111111", symbol: "USDG", decimals: 6, usdPerUnit: 1 } }), s, rules, 0).fire, false);
 });

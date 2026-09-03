@@ -20,7 +20,7 @@ const fresh = (over: Partial<CurveState> = {}): CurveState => ({
   ...over,
 });
 
-test("constant product: 0.0535 ETH on a fresh curve buys about 3.0% of supply (Looprat, Foreman)", () => {
+test("constant product: 0.0535 ETH on a fresh curve buys about 3.0% of supply (the usual builder buy)", () => {
   const q = quoteBuy(fresh(), 53_519_145_802_650_970n);
   const share = Number(q.tokensOut) / 1e27;
   assert.ok(share > 0.0295 && share < 0.0305, `got ${share}`);

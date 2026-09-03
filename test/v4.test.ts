@@ -5,7 +5,7 @@ import { universalRouterAbi } from "../src/abi/uniswap.js";
 import { encodeV4Swap, poolId, ponsPoolKey } from "../src/trade/v4.js";
 import { exitReason, type Position } from "../src/trade/positions.js";
 
-const TOKEN = "0x642d30c84211ade7768fe557fbaed7224e2068c7" as const;
+const TOKEN = "0x3333333333333333333333333333333333333333" as const;
 
 test("ETH is always currency0 of a pons pool and the id is a keccak of the five key words", () => {
   const k = ponsPoolKey(TOKEN);

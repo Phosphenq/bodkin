@@ -37,7 +37,7 @@ test("the deployer index answers from memory: prior launches before the block, g
 test("a launch farm is three wallets printing the same fingerprint inside half an hour", async () => {
   const { FarmDetector } = await import("../src/pons/fingerprint.js");
   const base = {
-    ev: { token: "0x642d30c84211ade7768fe557fbaed7224e2068c7", curve: ZERO, deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
+    ev: { token: "0x3333333333333333333333333333333333333333", curve: ZERO, deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
     meta: { name: "x", symbol: "X", logo: "", description: "", socials: { twitter: "https://x.com/a", telegram: "", discord: "", website: "https://a.b", farcaster: "" } },
     record: { creatorFeeRecipient: D1, creatorTaxBps: 200, phase: 0, poolFee: 0, tickSpacing: 200, buybackEnabled: false },
     tx: { from: D1, to: ZERO, valueWei: 0n, devBuyWei: 600_000_000_000_000n, devTokens: 0n, exemptions: [], recipient: D1, timestamp: 0 },
@@ -59,7 +59,7 @@ test("a launch farm is three wallets printing the same fingerprint inside half a
 
 test("an unreadable launch is refused as unreadable, not as a rule failure", () => {
   const intel: LaunchIntel = {
-    ev: { token: "0x642d30c84211ade7768fe557fbaed7224e2068c7", curve: ZERO, deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
+    ev: { token: "0x3333333333333333333333333333333333333333", curve: ZERO, deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
     meta: null, record: null, tx: null, curve: null, pair: { address: ZERO, symbol: "ETH", decimals: 18, usdPerUnit: null }, errors: ["tx: HTTP 429 after 5 tries"],
   };
   const d = decide(intel, scoreLaunch(intel), rulesFromEnv(), 0);
