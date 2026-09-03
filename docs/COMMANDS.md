@@ -64,10 +64,12 @@ graduations in the index window; the curve bar, real quote in, FDV, and the open
 bodkin board [--port <n>] [--live] [--eth <n>] [--min-score <n>] [--keyword <regex>] [--allow-pairs]
 ```
 
-Starts the same engine as `snipe` and serves `http://127.0.0.1:4663` (or `BOARD_PORT`). Everything on the page is described in
-[BOARD.md](./BOARD.md): launches with a score bar and the first pass reason, a detail drawer per launch with links and every scoring line,
-positions with live marks and a **close now** button, rules with steppers that change the running engine, pause/resume, filters, search,
-keyboard shortcuts, sound on fire. Dry run unless `--live`.
+Starts the same engine as `snipe` and serves `http://127.0.0.1:4663` (or `BOARD_PORT`). **The engine starts stopped**: the page is a live
+feed of scored launches until you press **start demo** (dry run) or **arm live sniping** (`--live`, after the terminal confirmation).
+Everything on the page is described in [BOARD.md](./BOARD.md): launches with a score bar and the first pass reason, a detail drawer per
+launch with links to pons, the explorer, Axiom and FOMO and every scoring line, positions with live marks and a **close now** button, rules
+with steppers that change the running engine, a pulse that tells a quiet chain from a dead engine, filters, search, keyboard shortcuts,
+sound on fire. Takes the same `--budget` and `--yes` flags as `snipe`.
 
 ## snipe
 
@@ -87,12 +89,22 @@ bodkin snipe [--live] [--eth <n>] [--min-score <n>] [--max-tax-bps <n>] [--slipp
 | `--deployer <a...>` | | only these deployers |
 | `--max-open <n>` | 3 | simultaneous positions |
 | `--allow-pairs` | off | also fire on USDG- and stock-token-paired launches |
+| `--budget <eth>` | `SNIPE_BUDGET_ETH` (0.05) | stop firing once this much ETH has gone into entries this session |
+| `--yes` | off | skip the live confirmation prompt (for scripts) |
 | `--for <seconds>` | | stop after this many seconds |
 
 The loop: detect → read → score → rules → wait until `currentSnipeTaxBps(you) ≤ ceiling` (polled every 150 ms, give up after 12 s) →
 buy on the curve → mark every 5 s → sell on take profit, stop loss, trailing stop, or max hold. Every `pass` prints the rule that refused
 the launch. Exits are configured in `.env` (`TAKE_PROFIT_PCT`, `STOP_LOSS_PCT`, `TRAILING_PCT`, `MAX_HOLD_MIN`).
 Optional Telegram alerts on fire and exit when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set.
+
+With `--live`, before anything is armed, the terminal prints the signer's address, its balance, the size per buy, the position cap and
+the session budget, refuses if the balance does not cover one buy, and waits for you to type `arm`. The session budget is the wall
+between a bad hour and an empty wallet: once entries have consumed it, every further launch is refused with `session budget reached`.
+
+In the cards and the FIRE lines the symbol and the contract are terminal hyperlinks (Ctrl+click in Windows Terminal, iTerm2, kitty,
+VS Code): the symbol opens Axiom's Pulse on Robinhood Chain, the contract opens the token on pons, and every card ends with an
+`open:` line for pons, Axiom, FOMO and the explorer. The Axiom and FOMO links carry the referral handles from `.env`.
 
 Run **one** engine per `data/` directory: `snipe` and `board` both write `data/positions.json`.
 
@@ -200,6 +212,9 @@ with `--live`, calls `claim()` and prints what arrived.
 | `MAX_HOLD_MIN` | 45 | exit |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | | alerts |
 | `BOARD_PORT` | 4663 | board |
+| `SNIPE_BUDGET_ETH` | 0.05 | ETH a session may spend on entries before it stops firing |
+| `REF_AXIOM` | phosphen | Axiom referral handle behind the Axiom links; empty hides them |
+| `REF_FOMO` | phosphenq | FOMO referral code behind the FOMO links; empty hides them |
 | `NO_COLOR` | | plain output; `FORCE_COLOR=1` keeps colors when piping |
 
 ## Files

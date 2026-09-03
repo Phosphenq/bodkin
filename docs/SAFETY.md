@@ -10,7 +10,20 @@
 ## Dry run is the default
 
 `snipe`, `buy`, `sell`, `claim` and `board` quote and log without sending unless you pass `--live`. A dry run reads the same chain state
-and prints the same decision, so you can watch the engine for an hour before it is allowed to spend anything.
+and prints the same decision, so you can watch the engine for an hour before it is allowed to spend anything. The board goes one step
+further: even in dry run it opens as a feed and fires nothing until you press start.
+
+## Four walls around a live session
+
+1. **The confirmation.** `--live` prints the signer's address, its balance, the size per buy, the position cap and the session budget, refuses
+   if the balance does not cover one buy, and waits for you to type `arm`. On the board the same session needs the button too.
+2. **The buy size** (`--eth`, `SNIPE_ETH`): what one entry costs. Default 0.01 ETH.
+3. **The position cap** (`--max-open`): how many entries can be open at once. Default 3.
+4. **The session budget** (`--budget`, `SNIPE_BUDGET_ETH`): the total ETH entries may consume in one run. Default 0.05 ETH. When it is
+   reached every further launch is refused with `session budget reached`, whatever its score. A wallet that holds only the budget cannot
+   lose more than the budget.
+
+Start with a fresh wallet holding the budget and nothing else. Raise the numbers after you have watched the exits work for a session.
 
 ## What can still go wrong with `--live`
 

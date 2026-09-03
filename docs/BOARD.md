@@ -3,12 +3,21 @@
 `bodkin board` runs the sniper engine and serves one page on `http://127.0.0.1:4663`. It binds loopback only; nothing outside your machine can
 reach it. Dry run unless you started it with `--live`.
 
+**It opens as a feed.** Launches arrive, get scored and explained, and nothing fires until you press **start demo** (dry-run buys, no key
+needed) or, with `--live`, **arm live sniping** (confirmed once in the terminal at start and once more on the button). **stop** returns to
+the feed; positions keep being marked and closed by their exit rules either way.
+
 <p align="center"><img src="../assets/board.png" alt="the board: launches, positions, rules" width="100%"></p>
 
 ## Reading it
 
-**Header.** The mode pill shows `dry run`, `LIVE`, or `paused` (blinking). The subtitle shows how many launches the chain produced in the
-last five minutes. The clock is UTC, the same clock the feed uses.
+**Header.** The mode pill shows `feed only`, `demo trading`, `LIVE · not armed` or `LIVE · armed`. The subtitle shows how many launches
+the chain produced in the last five minutes. The clock is UTC, the same clock the feed uses.
+
+**The pulse.** The engine sends a tick every ten seconds with the feed's state and the RPC gate's state. A yellow bar under the header says
+when the chain has been quiet for two minutes or an RPC endpoint is benched; a red bar says the engine itself has not answered for 35 s,
+which means its console window is gone or stuck: close it and start bodkin again. Every button waits at most eight seconds for the engine and
+says so if it hears nothing, instead of dying silently.
 
 **Five numbers.** Launches seen this session · fired · open positions · realized PnL in ETH for the session · uptime. A tile flashes yellow
 when its number changes.
@@ -17,10 +26,11 @@ when its number changes.
 score with a bar (lime ≥ 75, white ≥ 45, grey below), `FIRE` or `pass`, and the first reason the rules refused it with a `+n` for the rest.
 A `FIRE` row flashes yellow on arrival. Click any row for the drawer.
 
-**Drawer.** The whole read of that launch: contract, links to pons, the explorer, DexScreener and the token's own X / web / Telegram; the
-description; the decision and every rule that refused it; score and verdict; dev buy; creator tax; who receives the fees; exempt wallets; the
-deployer's record; the opening tax at read time; curve progress; read latency and block; and every scoring line with its points.
-`esc` closes it.
+**Drawer.** The whole read of that launch: contract, links to pons, the explorer, Axiom and FOMO (both open through the referral handles
+in `.env` and copy the contract to your clipboard on the way, because a launch that is seconds old is on the curve, not on a DEX, and the
+terminals find it by contract), and the token's own X / web / Telegram when the launch declared them; the description; the decision and
+every rule that refused it; score and verdict; dev buy; creator tax; who receives the fees; exempt wallets; the deployer's record; the
+opening tax at read time; curve progress; read latency and block; and every scoring line with its points. `esc` closes it.
 
 **Positions.** Open positions with a live mark every five seconds: PnL, size, venue (curve or pool), peak, and a **close now** button.
 Closed positions stay for fifteen minutes with their exit reason. In `--live` mode the button asks for confirmation first.
@@ -33,7 +43,8 @@ shown but not editable here.
 
 | Control | What it does |
 |---|---|
-| **pause / resume** (`p`) | launches keep arriving and scoring, positions keep being managed, nothing new fires |
+| **start demo / stop demo** (`p`) | dry-run buys on or off; launches keep arriving and scoring either way, positions keep being managed |
+| **arm live sniping / disarm** (`p`, only with `--live`) | real buys on or off, with a confirmation on the button |
 | **sound** | a short beep on every fire; off by default |
 | **all / fire / eth pairs** (`a`, `f`) | filter the feed |
 | **search** (`/`) | filter by name, symbol or contract |
@@ -49,9 +60,9 @@ All on `127.0.0.1` only.
 | Method | Path | Effect |
 |---|---|---|
 | GET | `/` | the page |
-| GET | `/events` | server-sent events: `hello`, `launch`, `fire`, `mark`, `exit`, `paused`, `rules`, `index` |
-| GET | `/api/state` | a snapshot: mode, paused, rules, counters, positions, ETH/USD, the last 100 events |
-| POST | `/api/pause`, `/api/resume` | pause / resume firing |
+| GET | `/events` | server-sent events: `hello`, `tick` (every 10 s), `launch`, `fire`, `mark`, `exit`, `paused`, `rules`, `index` |
+| GET | `/api/state` | a snapshot: mode, paused, rules, counters, positions, ETH/USD, feed and RPC health, the last 100 events |
+| POST | `/api/start`, `/api/stop` | firing on / off (`/api/resume` and `/api/pause` are the same verbs) |
 | POST | `/api/close/<positionId>` | sell a position now |
 | POST | `/api/rules` | body `{"minScore": 70}` etc.; only the five editable rules, clamped to their bounds |
 
