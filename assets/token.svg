@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000" role="img" aria-label="Bodkin token">
+  <rect width="1000" height="1000" fill="#000000"/>
+  <!-- bodkin point, scaled for a 40 px circle: one object, thick, centered -->
+  <polygon points="500,110 640,560 500,485 360,560" fill="#CCFF00"/>
+  <rect x="452" y="536" width="96" height="70" fill="#CCFF00"/>
+  <rect x="478" y="606" width="44" height="200" fill="#CCFF00"/>
+  <polygon points="478,806 478,880 396,846" fill="#CCFF00"/>
+  <polygon points="522,806 522,880 604,846" fill="#CCFF00"/>
+</svg>

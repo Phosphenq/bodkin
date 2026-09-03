@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160" role="img" aria-label="Bodkin">
+  <rect width="640" height="160" fill="#000000"/>
+  <g transform="translate(20,20) scale(0.47)">
+    <rect x="0.5" y="0.5" width="255" height="255" rx="48" fill="#000000" stroke="#35322D"/>
+    <polygon points="128,30 158,138 128,120 98,138" fill="#CCFF00"/>
+    <rect x="118" y="132" width="20" height="18" fill="#CCFF00"/>
+    <rect x="123" y="150" width="10" height="66" fill="#CCFF00"/>
+    <polygon points="123,216 123,232 105,224" fill="#CCFF00"/>
+    <polygon points="133,216 133,232 151,224" fill="#CCFF00"/>
+  </g>
+  <text x="160" y="116" font-family="Instrument Serif, Martina Plantijn, Georgia, serif" font-size="112" font-weight="400" letter-spacing="-3" fill="#FFFFFF">bodkin</text>
+</svg>

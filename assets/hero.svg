@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-label="bodkin, the sniper terminal for Robinhood Chain">
+  <rect width="1600" height="520" fill="#000000"/>
+  <!-- halftone field, right side, fading in -->
+  <defs>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.6" fill="#FFFFFF"/></pattern>
+    <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity="1"/><stop offset="0.45" stop-color="#000" stop-opacity="1"/><stop offset="1" stop-color="#000" stop-opacity="0.35"/></linearGradient>
+  </defs>
+  <rect x="800" y="0" width="800" height="520" fill="url(#dots)" opacity="0.5"/>
+  <rect x="800" y="0" width="800" height="520" fill="url(#fade)"/>
+  <!-- icon -->
+  <g transform="translate(96,116) scale(0.62)">
+    <rect x="0.5" y="0.5" width="255" height="255" rx="48" fill="#000000" stroke="#35322D"/>
+    <polygon points="128,30 158,138 128,120 98,138" fill="#CCFF00"/>
+    <rect x="118" y="132" width="20" height="18" fill="#CCFF00"/>
+    <rect x="123" y="150" width="10" height="66" fill="#CCFF00"/>
+    <polygon points="123,216 123,232 105,224" fill="#CCFF00"/>
+    <polygon points="133,216 133,232 151,224" fill="#CCFF00"/>
+  </g>
+  <text x="290" y="212" font-family="Instrument Serif, Martina Plantijn, Georgia, serif" font-size="128" letter-spacing="-4" fill="#FFFFFF">bodkin</text>
+  <text x="296" y="272" font-family="Inter, Capsule Sans Text, system-ui, sans-serif" font-size="26" fill="#D9D9D9">the sniper terminal for pons v2 on Robinhood Chain</text>
+  <text x="296" y="316" font-family="Inter, Capsule Sans Text, system-ui, sans-serif" font-size="20" fill="#BFBFBF">reads every launch in one call · waits out the 99% opening tax · fires at 0.19% · local, open, non-custodial</text>
+  <!-- neon pill -->
+  <rect x="296" y="368" width="236" height="52" rx="26" fill="#CCFF00"/>
+  <text x="414" y="401" text-anchor="middle" font-family="Inter, Capsule Sans Text, system-ui, sans-serif" font-size="19" letter-spacing="-0.3" fill="#110E08">npm i &amp;&amp; npm start</text>
+  <rect x="548" y="368" width="196" height="52" rx="26" fill="none" stroke="#CCFF00"/>
+  <text x="646" y="401" text-anchor="middle" font-family="Inter, Capsule Sans Text, system-ui, sans-serif" font-size="19" letter-spacing="-0.3" fill="#CCFF00">chain id 4663</text>
+</svg>

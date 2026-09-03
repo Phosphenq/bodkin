@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Bodkin">
+  <rect x="0.5" y="0.5" width="255" height="255" rx="48" fill="#000000" stroke="#35322D"/>
+  <!-- bodkin point: narrow kite with a notched base -->
+  <polygon points="128,30 158,138 128,120 98,138" fill="#CCFF00"/>
+  <!-- socket -->
+  <rect x="118" y="132" width="20" height="18" fill="#CCFF00"/>
+  <!-- shaft -->
+  <rect x="123" y="150" width="10" height="66" fill="#CCFF00"/>
+  <!-- fletching -->
+  <polygon points="123,216 123,232 105,224" fill="#CCFF00"/>
+  <polygon points="133,216 133,232 151,224" fill="#CCFF00"/>
+</svg>
