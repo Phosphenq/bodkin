@@ -144,26 +144,27 @@ bodkin snipe --allow-pairs                   # also USDG and stock-token pairs
 bodkin snipe --live                          # sign and send
 ```
 
-Every `pass` prints the rule that refused the launch. Looprat, the launch that paid its fee recipient 15.44 ETH in nine hours, is refused by
-the defaults: it declared four wallets exempt from the opening tax. Relax `maxExemptWallets` on purpose, or not.
+Every `pass` prints the rule that refused the launch. A launch that declared four wallets exempt from the opening tax is refused by the
+defaults even when everything else about it looks good. Relax `maxExemptWallets` on purpose, or not.
 
 Exits: take profit +80 %, stop loss −35 %, trailing 25 % below the peak, max hold 45 min. Marks are real quotes for the whole position.
 The rules, the score and where every number comes from: [docs/STRATEGY.md](./docs/STRATEGY.md).
 
 ## fees
 
-<p align="center"><img src="./assets/fees.png" alt="bodkin fees on Looprat: recipient, 15.444 ETH credited, three claims with timestamps" width="100%"></p>
+<p align="center"><img src="./assets/fees.png" alt="bodkin fees on a graduated token: recipient, credited from the curve and the pool, one claim with its timestamp" width="100%"></p>
 
 Who is paid, how much accrued from the curve and from the graduated pool, every claim with a timestamp and transaction.
-On 2026-09-03 this is what `fees` read for $Looprat: recipient is not the deployer, 15.444 ETH credited, 15.444 ETH claimed in three claims,
-the first one four minutes before the builder's "i just claimed the creator fees" post.
+The screenshot is a graduated token read on 2026-09-03: the recipient is the deployer, 0.2753 ETH came from the curve and 0.1595 ETH from
+the pool, one claim of 0.4348 ETH at 18:39 UTC. When the recipient is **not** the deployer, the line says so; that is the builder / KOL deal
+in one word.
 
 ## watch, scan, dev
 
 ```
-bodkin watch 0x642d…68c7   # one line every 5 s: curve bar, flow, taxed buys, price; the pool after graduation
-bodkin scan  0x642d…68c7   # one token: launch, dev buy, exempt wallets, links, fees, deployer, curve activity
-bodkin dev   0x89e6…8043   # one deployer: every launch in the window with its phase
+bodkin watch 0x0da7…45ac   # one line every 5 s: curve bar, flow, taxed buys, price; the pool after graduation
+bodkin scan  0x0da7…45ac   # one token: launch, dev buy, exempt wallets, links, fees, deployer, curve activity
+bodkin dev   0xbBa6…AD4c   # one deployer: every launch in the window with its phase
 ```
 
 ## buy, sell, positions, wallet, claim
@@ -216,7 +217,6 @@ More in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), what can go wrong in [do
 | launches / graduations, 24 h | 24 462 / 559 (`TokenLaunched` / `PoolGraduated`, blocks 52 526 287–53 396 287) |
 | tempo | 56–152 launches per 3 000 blocks (~5 min) |
 | graduation | 4.2 ETH real quote against a 1.68 ETH phantom reserve; 28.57 % of supply reserved for the pool |
-| $Looprat fee recipient | 15.444 ETH credited in 71 sweeps, 3 claims, 0 pending |
 | dry-run entries | tax 0.19 %; 1.2–1.6 s after detection over the websocket, which sees the launch block about a second earlier than polling did (polling entries landed 188–203 ms after detection) |
 | public RPC | 8 parallel calls pass, 16 → half rejected, a batch of 12 → rejected; 2 calls every 100 ms → zero rejections |
 
@@ -226,8 +226,8 @@ More in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), what can go wrong in [do
 npm test
 ```
 
-Eighteen checks, no network: the curve quote reproduces the 3.00 % dev buy of Looprat and Foreman from their 0.0535 ETH, round trips lose
-more than the fee, the opening-tax cap, clamped fills, the score on a Looprat-shaped launch and on a serial deployer, the sniper's refusals,
+Eighteen checks, no network: the curve quote reproduces the 3.00 % dev buy that 0.0535 ETH gives on a fresh curve, round trips lose
+more than the fee, the opening-tax cap, clamped fills, the score on a builder-shaped launch and on a serial deployer, the sniper's refusals,
 the launch-farm fingerprint, the unreadable-launch path, the enrichment limiter, the deployer index, v4 pool ids and both router param layouts,
 and every exit rule.
 
