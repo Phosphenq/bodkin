@@ -1,0 +1,57 @@
+{
+  "name": "bodkin",
+  "version": "0.1.0",
+  "description": "The hunting terminal for Robinhood Chain: live launch analytics, creator-fee forensics, deployer history and a snipe-tax-aware sniper for pons v2. Local, open, non-custodial.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bodkin": "./bin/bodkin.js"
+  },
+  "main": "./dist/cli.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "scripts": {
+    "prepare": "npm run build",
+    "start": "tsx src/cli.ts",
+    "hunt": "tsx src/cli.ts hunt",
+    "board": "tsx src/cli.ts board",
+    "doctor": "tsx src/cli.ts doctor",
+    "build": "tsc -p tsconfig.json && node -e \"require('fs').mkdirSync('dist/board',{recursive:true});require('fs').copyFileSync('src/board/index.html','dist/board/index.html')\"",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "viem": "^2.56.3",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "keywords": [
+    "robinhood-chain",
+    "pons",
+    "sniper",
+    "memecoin",
+    "launchpad",
+    "uniswap-v4",
+    "viem",
+    "trading-bot"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Phosphenq/bodkin"
+  }
+}
