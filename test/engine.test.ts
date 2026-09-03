@@ -57,6 +57,25 @@ test("a launch farm is three wallets printing the same fingerprint inside half a
   assert.equal(decide(base, s, rulesFromEnv(), 0, 1).why.some((w) => w.startsWith("launch farm")), false);
 });
 
+test("the session budget stops firing before the wallet is drained", async () => {
+  const { scoreLaunch } = await import("../src/score.js");
+  const base = {
+    ev: { token: "0x3333333333333333333333333333333333333333", curve: "0x4444444444444444444444444444444444444444", deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
+    meta: { name: "x", symbol: "X", logo: "", description: "a real description of a real thing that is long enough", socials: { twitter: "https://x.com/a", telegram: "", discord: "", website: "https://a.b", farcaster: "" } },
+    record: { creatorFeeRecipient: D1, creatorTaxBps: 100, phase: 0, poolFee: 0, tickSpacing: 200, buybackEnabled: false },
+    tx: { from: D1, to: ZERO, valueWei: 0n, devBuyWei: 53_519_145_802_650_970n, devTokens: 30_000_000n * 10n ** 18n, exemptions: [], recipient: D1, timestamp: 0 },
+    curve: { quoteReserve: 1n, tokenReserve: 1n, realQuoteReserve: 0n, sellableTokens: 1n, reservedTokens: 0n, graduationThreshold: 1n, feeBps: 100n, creatorTaxBps: 100n, openingTaxBps: 0n, graduated: false, readyToGraduate: false, launchedAt: 0, readAtMs: 0 },
+    pair: { address: ZERO, symbol: "ETH", decimals: 18, usdPerUnit: null }, errors: [],
+  } as unknown as LaunchIntel;
+  const rules = rulesFromEnv({ sessionBudgetWei: 25n * 10n ** 15n, ethPerBuy: 10n ** 16n }); // 0.025 ETH budget, 0.01 per buy
+  const s = scoreLaunch(base, { deployer: { prior: 0, graduated: 0 } });
+  assert.equal(decide(base, s, rules, 0, 0, 0n).fire, true);
+  assert.equal(decide(base, s, rules, 0, 0, 10n ** 16n).fire, true, "second buy fits: 0.02 of 0.025");
+  const third = decide(base, s, rules, 0, 0, 2n * 10n ** 16n);
+  assert.equal(third.fire, false, "third buy would exceed the budget");
+  assert.ok(third.why[0].startsWith("session budget"));
+});
+
 test("an unreadable launch is refused as unreadable, not as a rule failure", () => {
   const intel: LaunchIntel = {
     ev: { token: "0x3333333333333333333333333333333333333333", curve: ZERO, deployer: D1, pairToken: ZERO, launchConfigId: 0n, graduationThreshold: 0n, blockNumber: 1n, txHash: "0x00", logIndex: 0, seenAtMs: 0 },
