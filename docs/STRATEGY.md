@@ -16,12 +16,12 @@ Default ceiling `SNIPE_MAX_TAX_BPS=300` (3 %). Measured dry-run entries: tax 0�
 
 | Signal | Points | Why |
 |---|---|---|
-| dev buy 1–6 % of supply | +15 | skin in the game without a bag that can flatten the curve. Looprat and Foreman: 3.00 % |
+| dev buy 1–6 % of supply | +15 | skin in the game without a bag that can flatten the curve; the builder launches that graduated this week sat at 3 % |
 | dev buy over 10 % | −25 | a 12.5 % dev buy killed a Grok Build clone at $5.9K while a 2.5 % one reached $140K |
 | no dev buy | −10 | nothing at stake |
 | creator tax ≤ 2 % | +10 | the creator earns on volume and has a reason to keep posting |
 | creator tax > 5 % | −25 | traders pay 6 %+ per side; flow dies |
-| fees routed to a third party | +5 and a flag | the builder/KOL deal pattern (Looprat: 15.44 ETH to a wallet that is not the deployer) |
+| fees routed to a third party | +5 and a flag | the builder/KOL deal pattern: the wallet that launched is not the wallet that gets paid |
 | X link / website / telegram | +8 / +8 / +3 | a launch with nowhere to go has no one to bring flow |
 | no socials | −15 | |
 | exempt wallets 1–3 / 4+ | −5 / −20 | addresses declared exempt from the opening tax at launch are the declared bundle |
@@ -53,8 +53,8 @@ Verdicts: FIRE ≥ 75, WATCH ≥ 45, SKIP below.
 
 Five of these (min score, max open, tax ceiling, dev share, exempt wallets) can be changed while the engine runs, from the board.
 
-Looprat itself would be refused by the default rules (four exempt wallets). That is the point of showing reasons: you decide
-which rule to relax, on purpose.
+A launch with four wallets exempt from the opening tax is refused by the default rules even when everything else looks good.
+That is the point of showing reasons: you decide which rule to relax, on purpose.
 
 ## Exits
 
