@@ -1,0 +1,77 @@
+{
+  "color": {
+    "background": { "$value": "#000000", "$type": "color", "$description": "Page canvas; Robinhood Chain brand black", "$extensions": { "anydesign": { "confidence": "high" } } },
+    "surface": { "$value": "#110E08", "$type": "color", "$description": "Card panel; also text-on-neon", "$extensions": { "anydesign": { "confidence": "high" } } },
+    "surface-2": { "$value": "#23231F", "$type": "color", "$description": "Raised chip (stock-token tags)", "$extensions": { "anydesign": { "confidence": "medium" } } },
+    "border": { "$value": "#35322D", "$type": "color", "$description": "Hairline on panels", "$extensions": { "anydesign": { "confidence": "medium" } } },
+    "text": {
+      "primary": { "$value": "#FFFFFF", "$type": "color", "$description": "Headlines, titles, nav", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "secondary": { "$value": "#D9D9D9", "$type": "color", "$description": "Body copy, subtitles", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "muted": { "$value": "#BFBFBF", "$type": "color", "$description": "Disclaimers, footnotes", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "on-accent": { "$value": "#110E08", "$type": "color", "$description": "Text on Robin Neon", "$extensions": { "anydesign": { "confidence": "high" } } }
+    },
+    "accent": { "$value": "#CCFF00", "$type": "color", "$description": "Robin Neon: the only chroma. CTA pills, tag badges, footer band", "$extensions": { "anydesign": { "confidence": "high", "source": "brand guidelines + measured rgb(204,255,0)" } } }
+  },
+  "typography": {
+    "font-family": {
+      "serif": { "$value": "Martina Plantijn, Instrument Serif, Georgia, serif", "$type": "fontFamily", "$description": "Display and section titles (proprietary; Instrument Serif is the open substitute)", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "sans": { "$value": "Capsule Sans Text, Inter, system-ui, sans-serif", "$type": "fontFamily", "$description": "Body, buttons, nav (proprietary; Inter substitute)", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "card-title": { "$value": "Phonic, Capsule Sans Text, Inter, sans-serif", "$type": "fontFamily", "$description": "Card headings", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "mono": { "$value": "Capsule Sans Text Mono, JetBrains Mono, ui-monospace, monospace", "$type": "fontFamily", "$description": "Loaded by the site, unused on the landing; numerals and addresses in product UI", "$extensions": { "anydesign": { "confidence": "medium" } } }
+    },
+    "font-size": {
+      "display": { "$value": "72px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "display-mobile": { "$value": "44px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "section-title": { "$value": "38px", "$type": "dimension", "$description": "Measured at 800px viewport; ~56px on desktop", "$extensions": { "anydesign": { "confidence": "medium" } } },
+      "card-title": { "$value": "23px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "body": { "$value": "16px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "button": { "$value": "16px", "$type": "dimension", "$description": "13px in the compact nav pill", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "label": { "$value": "13px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "medium" } } }
+    },
+    "font-weight": {
+      "regular": { "$value": 400, "$type": "fontWeight", "$description": "The only weight in use; 300/500/700 are loaded and unused", "$extensions": { "anydesign": { "confidence": "high" } } }
+    },
+    "letter-spacing": {
+      "display": { "$value": "-1px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "display-mobile": { "$value": "-0.4px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "button": { "$value": "-0.4px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } }
+    },
+    "line-height": {
+      "display": { "$value": "1.1", "$type": "number", "$extensions": { "anydesign": { "confidence": "medium" } } },
+      "card-title": { "$value": "33px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+      "body": { "$value": "1.5", "$type": "number", "$extensions": { "anydesign": { "confidence": "medium" } } }
+    }
+  },
+  "spacing": {
+    "1": { "$value": "8px", "$type": "dimension" },
+    "2": { "$value": "16px", "$type": "dimension" },
+    "3": { "$value": "24px", "$type": "dimension" },
+    "4": { "$value": "32px", "$type": "dimension" },
+    "6": { "$value": "48px", "$type": "dimension" },
+    "8": { "$value": "64px", "$type": "dimension" },
+    "12": { "$value": "96px", "$type": "dimension" },
+    "20": { "$value": "160px", "$type": "dimension", "$description": "Desktop section rhythm (estimate)", "$extensions": { "anydesign": { "confidence": "medium" } } }
+  },
+  "radius": {
+    "pill-tag": { "$value": "12px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "high" } } },
+    "card": { "$value": "24px", "$type": "dimension", "$extensions": { "anydesign": { "confidence": "medium" } } },
+    "pill": { "$value": "36px", "$type": "dimension", "$description": "Full pill on a 44px control", "$extensions": { "anydesign": { "confidence": "high" } } }
+  },
+  "size": {
+    "control": { "$value": "44px", "$type": "dimension", "$description": "Primary pill height", "$extensions": { "anydesign": { "confidence": "high" } } },
+    "control-compact": { "$value": "36px", "$type": "dimension", "$description": "Nav pill height", "$extensions": { "anydesign": { "confidence": "medium" } } }
+  },
+  "elevation": {
+    "0": { "$value": "none", "$type": "shadow", "$description": "Canvas: no chrome" },
+    "1": { "$value": "1px solid #35322D", "$type": "border", "$description": "Panel: surface tone + hairline. The system has no drop shadows." }
+  },
+  "$extensions": {
+    "anydesign": {
+      "source": "https://robinhood.com/us/en/crypto/chain/",
+      "captured_at": "2026-09-03",
+      "method": "playwright multi-viewport + computed-style probe + pixel sampling + brand guidelines cross-check",
+      "spec": "W3C Design Tokens Community Group 2025.10",
+      "note": "Zero CSS custom properties exposed by the site; every token is measured."
+    }
+  }
+}
