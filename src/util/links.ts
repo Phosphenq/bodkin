@@ -6,6 +6,8 @@
  * on a token page changes nothing, checked 4.09.2026. Set REF_AXIOM / REF_FOMO in .env to your own handles; leave
  * them empty to drop the sign-up links.
  */
+import { c } from "./log.js";
+
 const axiomRef = () => process.env.REF_AXIOM?.trim() ?? "phosphen";
 const fomoRef = () => process.env.REF_FOMO?.trim() ?? "phosphenq";
 
@@ -28,8 +30,8 @@ export function osc(text: string, url: string): string {
   return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
 }
 
-/** One line with the sign-up links, empty when both handles are empty. */
+/** One line with the sign-up links: a neon badge and neon links, so it does not sink into the grey header. Empty when both handles are empty. */
 export function refLine(): string {
-  const parts = [links.axiomRef() ? osc("axiom", links.axiomRef()) : "", links.fomoRef() ? osc("fomo", links.fomoRef()) : ""].filter(Boolean);
-  return parts.length ? `sign up: ${parts.join(" · ")}` : "";
+  const parts = [links.axiomRef() ? c.neon(osc("axiom", links.axiomRef())) : "", links.fomoRef() ? c.neon(osc("fomo", links.fomoRef())) : ""].filter(Boolean);
+  return parts.length ? `${c.onNeon(" sign up ")} ${parts.join(c.muted(" · "))}` : "";
 }
