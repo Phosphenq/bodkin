@@ -1,9 +1,12 @@
 <p align="center">
+  <img src="./assets/avatar.png" alt="bodkin" width="128">
+</p>
+<p align="center">
   <img src="./assets/banner.png" alt="bodkin" width="100%">
 </p>
 
 <p align="center">
-  <img alt="tests" src="https://img.shields.io/badge/tests-18%20passing-CCFF00?style=flat-square&labelColor=110E08">
+  <img alt="tests" src="https://img.shields.io/badge/tests-23%20passing-CCFF00?style=flat-square&labelColor=110E08">
   <img alt="node" src="https://img.shields.io/badge/node-%E2%89%A520-D9D9D9?style=flat-square&labelColor=110E08">
   <img alt="runtime deps" src="https://img.shields.io/badge/runtime%20deps-3-D9D9D9?style=flat-square&labelColor=110E08">
   <img alt="chain" src="https://img.shields.io/badge/chain-4663-D9D9D9?style=flat-square&labelColor=110E08">
