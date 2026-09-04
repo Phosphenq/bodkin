@@ -22,5 +22,5 @@ test("empty handles drop the sign-up links and the sign-up line", () => {
     process.env.REF_AXIOM = a ?? "phosphen"; process.env.REF_FOMO = f ?? "phosphenq";
   }
   assert.equal(links.axiomRef(), `https://axiom.trade/@${process.env.REF_AXIOM}`);
-  assert.match(refLine(), /^sign up: axiom · fomo$/);
+  assert.match(refLine().replace(/\x1b\[[0-9;]*m/g, "").replace(/\x1b\]8;;[^\x1b]*\x1b\\/g, ""), /^ sign up  axiom · fomo$/);
 });
