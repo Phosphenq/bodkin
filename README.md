@@ -235,6 +235,7 @@ More in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), what can go wrong in [do
 | tempo | 56–152 launches per 3 000 blocks (~5 min) |
 | graduation | 4.2 ETH real quote against a 1.68 ETH phantom reserve; 28.57 % of supply reserved for the pool |
 | dry-run entries | tax 0.19 %; 1.2–1.6 s after detection over the websocket, which sees the launch block about a second earlier than polling did (polling entries landed 188–203 ms after detection) |
+| dry-run entries, 2026-09-04 | two fires, both at tax 0.19 %; the launch card read in 279–284 ms; entry 1.6–2.1 s after detection |
 | public RPC | 8 parallel calls pass, 16 → half rejected, a batch of 12 → rejected; 2 calls every 100 ms → zero rejections |
 
 ## Tests
