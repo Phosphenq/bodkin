@@ -145,7 +145,7 @@ program
     if (!opts.json) {
       banner();
       console.log(`${c.neon("bodkin")} ${c.muted("hunt · pons v2 · Robinhood Chain (4663) · " + (wsUrl ? "websocket" : `poll ${opts.poll || process.env.POLL_MS || 300} ms`) + (price ? ` · ETH $${price.toFixed(0)}` : ""))}`);
-      if (refLine()) console.log(c.muted(refLine()));
+      if (refLine()) console.log(refLine());
       console.log(hr());
     }
     deployers.start(

@@ -156,7 +156,7 @@ export function startEngine(opts: EngineOpts): EngineHandle {
   const sweep = setInterval(() => { if (deployers.ready) void deployers.sweepGraduations().catch(() => undefined); }, 60_000);
 
   log.info(`${c.neon("bodkin")} ${c.muted(`snipe · ${live ? c.onNeon(" LIVE ") : "dry run"} · ${eth(rules.ethPerBuy)} ETH per shot · budget ${eth(rules.sessionBudgetWei)} ETH · max open ${rules.maxOpenPositions} · tax ceiling ${bps(rules.maxOpeningTaxBps)} · min score ${rules.minScore} · TP ${rules.exits.takeProfitPct}% SL ${rules.exits.stopLossPct}% trail ${rules.exits.trailingPct}% hold ${rules.exits.maxHoldMin}m`)}`);
-  if (refLine()) log.info(c.muted(refLine()));
+  if (refLine()) log.info(refLine());
 
   const onLaunch = async (ev: LaunchEvent) => {
     const t0 = Date.now();
