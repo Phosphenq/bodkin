@@ -14,6 +14,10 @@
   <img alt="license" src="https://img.shields.io/badge/license-MIT-FFE700?style=flat-square&labelColor=110E08">
 </p>
 
+<p align="center">
+  <b>$BODKIN</b> · <code>0xB06B1E58F5ba2a3df1AB74C01cB2A44C5395B3be</code>
+</p>
+
 Every pons v2 launch on Robinhood Chain opens behind a **99 % tax that decays to zero in three seconds**. Racing the first block
 hands the buy to the creator. The chain seals a block every 100 ms, orders by arrival, and has no gas auction, so the only edge
 left is *when*. Bodkin reads a launch in one call, scores it with rules you can read, waits at full draw until the tax is under
